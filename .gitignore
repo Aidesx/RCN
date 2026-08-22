@@ -1,0 +1,11 @@
+datasets/
+models/artifacts/
+runs/
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.vs/ProjectSettings.json
+*.vsidx
+/.vs
