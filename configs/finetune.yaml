@@ -1,0 +1,32 @@
+base_model: mobilenet_v2
+weights: imagenet
+input:
+  height: 224
+  width: 224
+  channels: 3
+head:
+  pooling: global_average_pooling
+  dropout: 0.3
+phase1:
+  name: feature_extraction
+  frozen_backbone: true
+  learning_rate: 0.001
+  max_epochs: 10
+phase2:
+  name: partial_fine_tune
+  unfreeze_top_ratio: 0.4
+  learning_rate: 0.0001
+  max_epochs: 15
+training:
+  batch_size: 32
+  loss: sparse_categorical_crossentropy
+  optimizer: adam
+  early_stopping:
+    monitor: val_accuracy
+    patience: 5
+    restore_best_weights: true
+  checkpoint:
+    monitor: val_accuracy
+    mode: max
+    save_best_only: true
+  seed: 42

@@ -1,0 +1,32 @@
+input:
+  height: 64
+  width: 64
+  channels: 3
+architecture:
+  conv1_filters: 32
+  conv1_kernel: 5
+  pool_size: 2
+  conv2_filters: 64
+  conv2_kernel: 5
+  dense_units: 256
+  dropout: 0.5
+training:
+  loss: sparse_categorical_crossentropy
+  optimizer: adam
+  learning_rate: 0.001
+  batch_size: 32
+  max_epochs: 30
+  early_stopping:
+    monitor: val_accuracy
+    patience: 6
+    restore_best_weights: true
+  checkpoint:
+    monitor: val_accuracy
+    mode: max
+    save_best_only: true
+  scheduler:
+    enabled: false
+    reduce_lr_on_plateau:
+      factor: 0.5
+      patience: 3
+  seed: 42

@@ -1,0 +1,23 @@
+detection:
+  scanned_text_threshold_chars: 100
+classification:
+  confidence_threshold: 0.5
+  page_vote: majority
+  unknown_fallback_label: unknown
+routing:
+  text_only: text_classifier
+  image_only: image_model
+  both:
+    category: image_model
+    content: text_branch
+  embedded_images: false
+models:
+  default_image_model: cnn_a
+  default_text_model: tfidf_svm
+output:
+  json: true
+  markdown_report: true
+  terminal_summary: true
+  runs_dir: runs
+  artifacts_dir: models/artifacts
+seed: 42

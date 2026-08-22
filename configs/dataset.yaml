@@ -1,0 +1,24 @@
+classes:
+  - letter
+  - form
+  - report
+  - article
+  - invoice
+  - receipt
+paths:
+  raw: datasets/raw
+  pages: datasets/pages
+  splits: datasets/splits
+  text: datasets/text
+  provenance: datasets/raw/PROVENANCE.csv
+split:
+  train: 0.70
+  validation: 0.15
+  test: 0.15
+  by: document
+  seed: 42
+requirements:
+  min_pages_per_class: 50
+  recommended_pages_per_class: 150
+  label_spot_check_pages: 20
+  label_agreement: 0.99
