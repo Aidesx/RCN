@@ -1,8 +1,4 @@
-"""Single owner of repo-layout knowledge: roots, dirs, config loading.
-
-Every module/script/test asks this module instead of recomputing
-Path(__file__).parents[N] or relying on the current working directory.
-"""
+"""Single owner of repo-layout knowledge: roots, dirs, config loading."""
 from __future__ import annotations
 
 from pathlib import Path

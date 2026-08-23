@@ -1,10 +1,4 @@
-"""Dataset access: manifest ownership + model-agnostic tensor loading.
-
-The ARMS registry maps each model arm to its input config and tensor
-function (from the tested preprocess path), so one loader serves both the
-64x64 CNN and the 224x224 MobileNetV2 fine-tune arm. Manifest rows are
-validated once here instead of in every consumer.
-"""
+"""Manifest access + model-agnostic tensor loading via the ARMS registry."""
 from __future__ import annotations
 
 import csv

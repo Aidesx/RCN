@@ -1,9 +1,4 @@
-"""Evaluation: metrics + confusion matrix + majority-class baseline (04 §5).
-
-Pure NumPy/scikit-learn functions; the model is loaded and predicted elsewhere.
-The majority baseline always predicts the most frequent class of the TRAINING
-split and is scored on the frozen test split (04 §6 E0a).
-"""
+"""Metrics, confusion matrix, majority baseline helpers, acceptance gate."""
 from __future__ import annotations
 
 from collections import Counter
@@ -13,13 +8,15 @@ from sklearn.metrics import classification_report, confusion_matrix, f1_score
 
 
 def compute_metrics(y_true: np.ndarray, y_pred: np.ndarray, class_names: list[str]) -> dict:
+    labels = list(range(len(class_names)))
     return {
         "accuracy": float(np.mean(y_true == y_pred)),
-        "macro_f1": float(f1_score(y_true, y_pred, average="macro")),
+        "macro_f1": float(f1_score(y_true, y_pred, average="macro", labels=labels)),
         "per_class": classification_report(
-            y_true, y_pred, target_names=class_names, output_dict=True, zero_division=0
+            y_true, y_pred, labels=labels, target_names=class_names,
+            output_dict=True, zero_division=0,
         ),
-        "confusion_matrix": confusion_matrix(y_true, y_pred).tolist(),
+        "confusion_matrix": confusion_matrix(y_true, y_pred, labels=labels).tolist(),
     }
 
 
@@ -38,15 +35,6 @@ def majority_class_index_from_counts(counts_by_name: dict[str, int],
         if c > best_n:
             best, best_n = i, c
     return best
-
-
-def majority_baseline_metrics(y_train: np.ndarray, y_test: np.ndarray,
-                              class_names: list[str]) -> dict:
-    idx = majority_class_index(y_train)
-    y_pred = np.full_like(y_test, idx)
-    m = compute_metrics(y_test, y_pred, class_names)
-    m["baseline_class"] = class_names[idx]
-    return m
 
 
 def acceptance_gate(e1: dict, baseline: dict, min_margin: float = 0.10,

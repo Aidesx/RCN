@@ -1,19 +1,9 @@
-"""Image preprocessing: deterministic decode -> resize -> float32 -> [0,1].
-
-Pipeline per 04 §2/§3: decode, resize to model input size, convert to float32,
-normalize to [0,1]. Grayscale source pages are converted to RGB by replicating
-the single channel (documented fallback for predominantly B&W datasets), so
-both models always receive (H, W, 3) tensors.
-
-All steps are pure functions over (path, size) -> np.ndarray; no randomness,
-so the same source image deterministically yields the same tensor.
-"""
+"""Deterministic image decode -> resize -> float32 [0,1]; grayscale replicated to RGB."""
 from __future__ import annotations
 
 import numpy as np
 from PIL import Image
 
-from docproc import paths
 from docproc.paths import load_config
 
 RESAMPLING = Image.Resampling.BICUBIC
@@ -46,6 +36,11 @@ def tensor_from_file(path, size: tuple[int, int]) -> np.ndarray:
 def _model_size(config_name: str) -> tuple[int, int]:
     cfg = load_config(config_name)
     return int(cfg["input"]["height"]), int(cfg["input"]["width"])
+
+
+def file_to_pil(path) -> Image.Image:
+    """Public accessor: decoded RGB PIL image from a file path."""
+    return _read_image(path)
 
 
 def cnn_tensor(path) -> np.ndarray:

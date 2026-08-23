@@ -1,11 +1,4 @@
-"""Training harness: seeds, callbacks, run records (config + history + metrics).
-
-Every run writes a self-contained record under runs/<run_name>/:
-- config.yaml   : resolved training configuration snapshot
-- history.csv   : per-epoch train/val metrics
-- metrics.json  : final summary (best epoch, best val_accuracy, test-free)
-- best.keras    : checkpoint with the best validation accuracy weights
-"""
+"""Training harness: seeded fit + run records under runs/<name>/ (config, history, metrics, best.keras)."""
 from __future__ import annotations
 
 import csv

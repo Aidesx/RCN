@@ -1,9 +1,4 @@
-"""File type detection + text-vs-scanned PDF probing (deterministic, no ML).
-
-Magic bytes decide binary formats; extensions/content heuristics decide text
-formats; a PDF's own text layer decides pdf_text vs pdf_scanned using the
-configurable threshold in configs/pipeline.yaml (04 §1 / 03 §5).
-"""
+"""File type detection via magic bytes/extension + scanned-PDF text probe."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -83,7 +78,8 @@ def detect_file_type(path) -> Detection:
     p = Path(path)
     if not p.is_file():
         raise FileNotFoundError(f"file not found: {p}")
-    head = p.open("rb").read(512)
+    with p.open("rb") as fh:
+        head = fh.read(512)
 
     magic = _magic_type(head)
     if magic == "pdf":

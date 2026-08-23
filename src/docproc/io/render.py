@@ -1,13 +1,7 @@
-"""PDF page rendering + embedded-image extraction (PyMuPDF, deterministic).
-
-Rendering converts PDF pages to RGB PIL images at a fixed DPI so the same
-document always yields identical pages — training and inference must share
-one rendering distribution (05 §2 Stage 7 note).
-"""
+"""PDF page rendering (fixed-DPI PIL images) + embedded-image extraction."""
 from __future__ import annotations
 
 import io
-from pathlib import Path
 
 from PIL import Image
 

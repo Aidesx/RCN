@@ -1,10 +1,7 @@
-"""TF-IDF vectorization wrapper (text branch, E0b baseline).
-
-Deterministic wrapper over sklearn's TfidfVectorizer; hyperparameters come
-from configs/text.yaml (no hard-coding). Provides fit/transform/save/load
-with joblib so the trained vectorizer can be reused at inference time.
-"""
+"""TF-IDF vectorization wrapper; params from configs/text.yaml; joblib save/load."""
 from __future__ import annotations
+
+from pathlib import Path
 
 from joblib import dump, load
 from sklearn.feature_extraction.text import TfidfVectorizer

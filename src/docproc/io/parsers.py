@@ -1,26 +1,17 @@
-"""Deterministic text extraction per supported format (no ML).
-
-Formats: PDF text layer (PyMuPDF), DOCX paragraphs+tables (python-docx),
-Markdown raw text, HTML via BeautifulSoup. Every failure raises a structured
-ParseError/UnsupportedFormatError instead of crashing.
-"""
+"""Deterministic text extraction per format; structured errors, no crashes."""
 from __future__ import annotations
 
-import io
 from pathlib import Path
 
 from docproc.io.detect import (
     DOCX,
     HTML,
     MARKDOWN,
-    PDF_SCANNED,
     PDF_TEXT,
     ParseError,
     UnsupportedFormatError,
     detect_file_type,
 )
-
-TEXT_EXTRACTABLE = {PDF_TEXT, MARKDOWN, HTML, DOCX}
 
 
 def _extract_pdf(path) -> str:

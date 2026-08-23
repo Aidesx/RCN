@@ -4,17 +4,18 @@
 
 ## Mục tiêu dự án (Project Objective)
 
-Xây dựng một CLI application nhận file/folder tài liệu và:
+Xây dựng một CLI application **hiểu tài liệu** nhận text / file / folder và:
 
-1. **Phân loại trang tài liệu** vào 6 nhóm: `invoice`, `receipt`, `report`, `letter`, `form`, `article` bằng **CNN tự xây** (kiến trúc Ch9 template) — đây là thành phần ML chính.
-2. **Trích xuất nội dung** từ tài liệu text-based (PDF text layer, DOCX, Markdown, HTML) bằng parser deterministic — không dùng ML.
-3. **So sánh 3 nhánh model** trên cùng một dataset:
-   - Self-built CNN (64×64, tự xây, là model chính)
-   - MobileNetV2 fine-tuned (224×224, so sánh — `EXTENSION`)
-   - TF-IDF + SVM/RF text baseline (so sánh)
-4. **Xuất kết quả có cấu trúc**: JSON + Markdown report + summary ở terminal.
+1. **Hiểu nội dung theo tầng** (mục tiêu chính):
+   - **L1 Cấu trúc** ✅ — word → sentence → paragraph kèm thống kê (`docproc.nlp.analyze_structure`)
+   - **L2 Từ khóa** ✅ — top-k keyphrases bằng TF-IDF trong văn bản (`nlp/keywords.py`, uni+bigram, lọc stopwords song ngữ)
+   - **L3 Chủ đề** ✅ — LDA (seed 42), chọn k bằng UMass coherence (`nlp/topics.py`)
+   - **L4 Trường dữ liệu** ✅ — regex schemas theo loại tài liệu: số HĐ, ngày, tổng tiền, bên mua/bán… (`nlp/fields.py`)
+2. **Phân loại loại tài liệu** (router): 6 nhóm `invoice/receipt/report/letter/form/article` — CNN cho ảnh/scan, TF-IDF+SVM cho text; nhãn phụ trợ, thiếu artifact → `unavailable` không fail.
+3. **Trích xuất nội dung** từ PDF-text/DOCX/Markdown/HTML bằng parser deterministic.
+4. **Xuất báo cáo hiểu tài liệu**: `understand()` → JSON + Markdown + terminal (`nlp/report.py` + CLI `scripts/understand_text.py`).
 
-**Ranh giới phạm vi (không đổi):** không OCR — scanned PDF được *phân loại như ảnh*, không đọc chữ; không layout/table extraction; >60 testcases; CLI chạy offline.
+**Ranh giới phạm vi (không đổi):** không OCR; không LLM/API ngoài — ưu tiên kiến thức khóa học; scanned page chỉ được *phân loại*, không đọc chữ; MobileNetV2/fusion chuyển **FUTURE**. Kế hoạch chi tiết: `D:\Working\SIC\01..06` (bộ v2, 2026-08-23).
 
 ## Input / Output
 
@@ -40,7 +41,9 @@ Xây dựng một CLI application nhận file/folder tài liệu và:
 - [x] **Stages 4–6: Self-built CNN (Architecture A) train + evaluate** — E1 best val_accuracy 60% (epoch 27/30); frozen test: accuracy **57.1%**, macro-F1 **0.514**, majority baseline 28.6% → **gate PASS** (+28.6 pts, ≥0.50 F1). Artifacts: `runs/E1/` (weights `best.keras`, history, metrics, confusion matrix, learning curves)
 - [x] Stage 7 Document I/O: `src/docproc/io/` — file detection (magic bytes + scanned-PDF probe), parsers (PDF/DOCX/MD/HTML), renderer + embedded-image extraction, structured error contracts — golden tests
 - [x] Architecture deepening: `docproc/paths` (một nguồn duy nhất cho layout/config), dataset module với registry 2 arms (cnn 64×64 / finetune 224×224), `evaluation.report` dùng chung cho mọi experiment — manifest rebuild **byte-identical**, E1 tái lập chính xác
-- [ ] Implementation (theo `06-project-specification.md` §8: Stage 0 → Stage 13) — test suite hiện tại **92/92 pass**
+- [x] Stage 8 Text baseline (E0b): corpus tổng hợp 360 docs (`datasets/text/`) + TF-IDF+SVM/RF GridSearchCV — test acc **1.000** / macro-F1 **1.000** vs baseline 16.7% → gate PASS; artifacts `models/artifacts/text_*` + `runs/E0b/`
+- [x] **Understanding pipeline v2 (L1+L2+L3 + router + report + CLI)** — keyphrases TF-IDF, LDA+UMass, `understand()` seam, CLI file/folder/demo — test suite **139/139 pass**
+- [ ] FUTURE: MobileNetV2 fine-tune (E3/E4) · fusion E5 · L4 field extraction · QA/tóm tắt
 
 ## Cấu trúc
 

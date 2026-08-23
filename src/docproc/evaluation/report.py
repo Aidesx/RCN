@@ -17,7 +17,6 @@ from docproc import paths
 from docproc.evaluation.metrics import (
     acceptance_gate,
     compute_metrics,
-    majority_baseline_metrics,
     majority_class_index_from_counts,
 )
 from docproc.training.data import load_split_arrays, split_class_counts

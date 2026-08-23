@@ -36,7 +36,6 @@ img = Image.new("RGB", (400, 560), "white")
 d = ImageDraw.Draw(img)
 for y in range(0, 560, 20):
     d.line([(0, y), (400, y)], fill=200)
-img_bytes = io_png = None
 import io
 
 buf = io.BytesIO()
