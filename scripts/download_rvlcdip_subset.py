@@ -37,7 +37,7 @@ seen = set()
 
 with open(os.path.join(RAW, "PROVENANCE.csv"), "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
-    writer.writerow(["project_class", "local_file", "source_split", "rvlcdip_filename", "label_id"])
+    writer.writerow(["project_class", "local_file", "source_split", "rvlcdip_filename", "label_id", "source"])
     for split, parquet in FILES.items():
         local = hf_hub_download(REPO, parquet, repo_type="dataset")
         df = pd.read_parquet(local)
@@ -57,7 +57,7 @@ with open(os.path.join(RAW, "PROVENANCE.csv"), "w", newline="", encoding="utf-8"
                 img = img.convert("L")
             out_name = f"{cls}_{counts[cls]:04d}.png"
             img.save(os.path.join(RAW, cls, out_name))
-            writer.writerow([cls, out_name, split, src, label])
+            writer.writerow([cls, out_name, split, src, label, "rvlcdip"])
             counts[cls] += 1
         print("after", split, ":", dict(counts), flush=True)
         if all(counts[c] >= PER_CLASS for c in LABELS.values()):

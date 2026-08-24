@@ -11,12 +11,13 @@ Input: text / .txt / .md / .html / .docx / PDF-text        [ảnh & PDF scan →
    ├─ [io] extract text per format                          ✅
    │
    ├─ [nlp] L1 structure: word→sentence→paragraph           ✅  nlp/structure.py
-   ├─ [nlp] L2 keywords: top-k keyphrases (in-doc TF-IDF)   🔜  nlp/keywords.py
-   ├─ [nlp] L3 topics: LDA + UMass coherence k-selection    🔜  nlp/topics.py
+   ├─ [nlp] L2 keywords: top-k keyphrases (in-doc TF-IDF)   ✅  nlp/keywords.py
+   ├─ [nlp] L3 topics: LDA + UMass coherence k-selection    ✅  nlp/topics.py
+   ├─ [nlp] L4 fields: regex schemas per class              ✅  nlp/fields.py
    │
    ├─ [router] doc-type label                               ♻️ CNN best.keras (ảnh) · SVM joblib (text)
    │
-   └─ [nlp/report] understand() → JSON + Markdown + summary 🔜  nlp/report.py
+   └─ [nlp/report] understand() → JSON + Markdown + summary ✅  nlp/report.py
 ```
 
 ## Nguyên tắc
@@ -38,4 +39,4 @@ Input: text / .txt / .md / .html / .docx / PDF-text        [ảnh & PDF scan →
 
 ## FUTURE (ngoài phạm vi hiện tại)
 
-MobileNetV2 fine-tune (E3/E4) · fusion E5 · L4 field extraction · QA/tóm tắt.
+MobileNetV2 fine-tune (E3/E4) · fusion E5 · QA/tóm tắt.

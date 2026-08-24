@@ -1,11 +1,6 @@
-"""Stage 8: generate the synthetic text corpus for the text baseline (E0b).
+"""Synthetic text corpus for the text baseline: 60 docs/class × 6, txt/md/html, seed 42.
 
-The image dataset (RVL-CDIP/SROIE) is scanned pages with no text layer and
-OCR is OUT_OF_SCOPE, so 04 §1(b)/§6-E0 routes the text branch to a synthetic
-corpus of realistic class-templated documents (marked EXTENSION per 04 §1
-"synthetic data allowed as rendered variants"). Deterministic: seed 42.
-
-Output: datasets/text/<class>/<doc_id>.{txt|md|html} + datasets/text/PROVENANCE_TEXT.csv
+Output: datasets/text/<class>/<doc_id>.{txt|md|html} + PROVENANCE_TEXT.csv
 """
 import csv
 import random

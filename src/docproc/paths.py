@@ -12,14 +12,15 @@ RAW_DIR = DATASETS_DIR / "raw"
 TESTS_DIR = ROOT.parent / "rcn-tests"  # suite kept outside the repo (user decision, 06 v2.7)
 
 
-def config_path(name: str) -> Path:
-    return CONFIG_DIR / f"{name}.yaml"
+def load_yaml_file(path) -> dict:
+    """Load any YAML file by explicit path (configs are the only YAML we ship)."""
+    import yaml
+
+    return yaml.safe_load(Path(path).read_text(encoding="utf-8"))
 
 
 def load_config(name: str) -> dict:
-    import yaml
-
-    return yaml.safe_load(config_path(name).read_text(encoding="utf-8"))
+    return load_yaml_file(CONFIG_DIR / f"{name}.yaml")
 
 
 def dataset_config() -> dict:

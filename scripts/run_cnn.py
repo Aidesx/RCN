@@ -15,8 +15,6 @@ from docproc.models.cnn import build_model  # noqa: E402
 from docproc.training.data import load_split_arrays, make_datasets  # noqa: E402
 from docproc.training.harness import run_training  # noqa: E402
 
-ROOT = Path(__file__).resolve().parents[1]
-
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)

@@ -14,13 +14,7 @@ from docproc import paths
 
 
 def _load_config(config_path: Path | None) -> dict:
-    return paths.load_config("cnn") if config_path is None else _read_yaml(config_path)
-
-
-def _read_yaml(p: Path) -> dict:
-    import yaml
-
-    return yaml.safe_load(Path(p).read_text(encoding="utf-8"))
+    return paths.load_config("cnn") if config_path is None else paths.load_yaml_file(config_path)
 
 
 def num_classes() -> int:

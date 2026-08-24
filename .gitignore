@@ -10,3 +10,5 @@ venv/
 *.vsidx
 /.vs
 AidenOCR/
+.pytest_cache/
+.ruff_cache/

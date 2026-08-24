@@ -11,6 +11,7 @@ Two artifacts are produced by Stage 2 and consumed by every later stage:
 | source_split | str | Split inside the source dataset the page came from (external sources only) |
 | rvlcdip_filename | str | Original file name in the source dataset (= document id) |
 | label_id | int | Label id in the source dataset (external sources only) |
+| source | str | Provenance of the row (`rvlcdip` / `sroie` / ...) — required by `build_split_manifest.py` |
 
 ## 2. Split manifest (created in Stage 2: `datasets/splits/manifest.csv`)
 
@@ -28,6 +29,6 @@ One row per page image. Used for train/val/test loading, leak checks, and metric
 
 - Split by **document** (`doc_id`), never by page: all pages of one `doc_id` land in the same split.
 - Stratified by class; ratios 70/15/15.
-- Test split frozen after first build (no re-split without a spec update per 06 §14).
+- Test split frozen after first build (no re-split without a spec update per 06 §7).
 - No duplicate `doc_id` across splits; every class present in every split (≥50 pages/class recommended).
 - `split.by: document` and `split.seed: 42` in `configs/dataset.yaml` drive reproducibility.

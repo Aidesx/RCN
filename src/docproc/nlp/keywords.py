@@ -62,24 +62,33 @@ def extract_keywords(text: str, k: int = 10) -> dict:
 
     from collections import Counter
 
-    pair_counts = Counter(zip(doc_tokens, doc_tokens[1:]))
+    # Adjacent-pair counts; skip self-pairs (a repeated single word must not
+    # produce a degenerate "word word" keyphrase).
+    pair_counts = Counter((a, b) for a, b in zip(doc_tokens, doc_tokens[1:]) if a != b)
     for (a, b), cnt in pair_counts.items():
         bg = f"{a} {b}"
         if bg not in candidates:
             candidates[bg] = ((score_uni[a] + score_uni[b]) / 2.0, cnt)
 
-    ranked = sorted(candidates.items(), key=lambda kv: (-kv[1][0], kv[0]))
+    # Rank by score desc; on a tie prefer the longer (bigram) term so a
+    # keyphrase can beat its own member unigrams and still appear in the top-k.
+    ranked = sorted(candidates.items(),
+                    key=lambda kv: (-kv[1][0], 0 if len(kv[0].split()) == 2 else 1,
+                                    kv[0]))
 
     chosen: list[dict] = []
-    used_unigrams: set[str] = set()
+    used_tokens: set[str] = set()
     for term, (score, cnt) in ranked:
         if len(chosen) >= k:
             break
         parts = term.split()
-        if len(parts) == 2 and parts[0] in used_unigrams and parts[1] in used_unigrams:
+        # Spec D1: no overlap in output top-k — a candidate is skipped if any
+        # of its tokens is already covered by a previously chosen term (in
+        # either direction: unigram inside a chosen bigram, or bigram sharing
+        # a token with a chosen unigram/bigram).
+        if any(p in used_tokens for p in parts):
             continue
         chosen.append({"term": term, "score": round(score, 6), "count": cnt})
-        if len(parts) == 1:
-            used_unigrams.add(term)
+        used_tokens.update(parts)
 
     return {"keywords": chosen, "candidates_scored": len(candidates)}

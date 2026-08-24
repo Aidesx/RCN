@@ -1,0 +1,42 @@
+# L4 field schemas — per-class OVERRIDE của built-in defaults trong
+# `src/docproc/nlp/fields.py`. Class khai báo ở đây sẽ THAY THẾ hoàn toàn
+# schema built-in cùng tên; class không khai báo → giữ built-in.
+#
+# Cấu trúc một class:
+#   required: [tên field, ...]   -> field bắt buộc; thiếu sẽ ghi vào
+#                                   `missing_required` trong kết quả
+#   fields:
+#     <tên field>:
+#       patterns: [regex, ...]    -> pattern đầu khớp thắng (thứ tự quan trọng)
+#       normalize: date | money | upper | none   (mặc định none)
+#
+# Lưu ý: dùng YAML single-quote để giữ nguyên backslash của regex.
+
+invoice:
+  required: [invoice_number, total_due]
+  fields:
+    invoice_number:
+      patterns:
+        - '(?:INVOICE|Invoice)\s*(?:#|number|#\s*|No\.?[:\\s]*)\s*([A-Z]*-?\d+)'
+        - '#(INV-\d+)'
+      normalize: upper
+    date:
+      patterns:
+        - 'Date:\s*(\d{4}-\d{2}-\d{2}|\d{1,2}/\d{1,2}/\d{2,4})'
+        - 'issue[d]?\s*(?:date)?[:\\s]*(\d{4}-\d{2}-\d{2}|\d{1,2}/\d{1,2}/\d{2,4})'
+      normalize: date
+    total_due:
+      patterns:
+        - '(?:TOTAL DUE|Total due|Total)\s*:?\s*\$?\s*((?:\$|USD\s*)?\d[\d,]*(?:\.\d{1,2})?)'
+      normalize: money
+    vendor:
+      patterns:
+        - 'From:\s*(.+)'
+        - 'issued by\s+(.+?)\.'
+    buyer:
+      patterns:
+        - '(?:Bill to|Billed to|Customer)[:\s]*\n?\s*(.+)'
+        - 'purchased by\s+(.+?)\b'
+
+receipt:
+  required: [total]

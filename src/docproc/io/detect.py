@@ -33,6 +33,7 @@ def _pipeline_threshold() -> int:
 
 
 def _magic_type(head: bytes) -> str | None:
+    """Signature table: %PDF · ZIP · PNG · JPEG · GIF · BMP · TIFF."""
     if head.startswith(b"%PDF"):
         return "pdf"
     if head.startswith(b"PK\x03\x04"):
@@ -56,6 +57,12 @@ def _sniff_text_format(text_head: str) -> str:
         return HTML
     if low.lstrip().startswith(("#", "- [ ]", "- [x]")) or "\n## " in low:
         return MARKDOWN
+    # Generic plain-text fallback for extensionless files: a NUL byte or a
+    # low printable ratio is the binary discriminator (never guess on those).
+    if text_head and "\x00" not in text_head:
+        printable = sum(ch.isprintable() or ch in "\n\r\t" for ch in text_head)
+        if printable / len(text_head) > 0.9:
+            return MARKDOWN
     return UNKNOWN
 
 

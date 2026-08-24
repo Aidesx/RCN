@@ -31,16 +31,17 @@ def _process(path: Path, out_dir: Path, k_keywords: int) -> tuple[bool, str]:
         print(f"[skip ] {path}: {exc}")
         return False, f"{path}: {exc}"
 
-    base = out_dir / f"{path.name}.understanding.json"
-    base.write_text(json.dumps(record, indent=2, ensure_ascii=False), encoding="utf-8")
-    Path(str(base)[:-5] + ".md").write_text(render_markdown(record), encoding="utf-8")
+    json_path = out_dir / f"{path.name}.understanding.json"
+    md_path = out_dir / f"{path.name}.understanding.md"
+    json_path.write_text(json.dumps(record, indent=2, ensure_ascii=False), encoding="utf-8")
+    md_path.write_text(render_markdown(record), encoding="utf-8")
 
     label = record.get("doc_type", {}).get("label", "?")
     n_para = record.get("structure", {}).get("stats", {}).get("paragraphs")
     summary = f"label={label}"
     if n_para is not None:
         summary += f", paragraphs={n_para}, keywords={len(record.get('keywords', []))}"
-    print(f"[ok   ] {path} -> {base.name}.json/{{.md}} ({elapsed:.2f}s) {summary}")
+    print(f"[ok   ] {path} -> {json_path.name} + {md_path.name} ({elapsed:.2f}s) {summary}")
     return True, ""
 
 
@@ -73,8 +74,9 @@ def main() -> int:
         return 2
 
     if target.is_dir():
-        files = sorted(f for f in target.rglob("*")
-                       if f.is_file() and f.suffix.lower() in SUPPORTED_SUFFIXES)
+        # include extensionless files too — detection content-sniffs them;
+        # truly unsupported types surface as transparent [skip] lines below.
+        files = sorted(f for f in target.rglob("*") if f.is_file())
     else:
         files = [target]
 

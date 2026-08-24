@@ -31,7 +31,8 @@ def _split_sentences(paragraph: str) -> list[str]:
                 merged[-1] = f"{merged[-1]} {part}"
                 continue
         merged.append(part)
-    return [p.strip() for p in merged if p.strip()]
+    # Drop parts with no word characters (e.g. a lone leading ".")
+    return [p.strip() for p in merged if p.strip() and _WORD.search(p)]
 
 
 def analyze_structure(text: str) -> dict:

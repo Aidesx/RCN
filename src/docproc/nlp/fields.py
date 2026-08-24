@@ -1,7 +1,19 @@
-"""L4 field extraction: regex schemas per document class; generic fallback."""
+"""L4 field extraction: regex schemas per document class; generic fallback.
+
+Schemas are configurable: a `configs/fields.yaml` (or an explicit path) can
+override per-class patterns/normalizers/required fields; classes not listed
+keep the built-in defaults below. Deterministic and offline.
+"""
 from __future__ import annotations
 
 import re
+from pathlib import Path
+
+from docproc.paths import CONFIG_DIR
+
+_FIELDS_YAML = "fields.yaml"
+_OVERRIDE_CACHE: dict[str, dict] = {}
+_REQUIRED_DEFAULTS: dict[str, list[str]] = {}
 
 _DATE_ISO = r"\d{4}-\d{2}-\d{2}"
 _DATE_DMY = r"\d{1,2}/\d{1,2}/\d{2,4}"
@@ -72,14 +84,90 @@ def _first_match(text: str, patterns: list[str]) -> str | None:
     return None
 
 
-def extract_fields(text: str, doc_type: str | None = None) -> dict:
-    """Extract fields per class schema; unknown types use the generic schema."""
+def _load_overrides(path: Path | None) -> dict:
+    """Load per-class schema overrides from YAML; graceful on any error."""
+    key = str(path) if path else _FIELDS_YAML
+    if key in _OVERRIDE_CACHE:
+        return _OVERRIDE_CACHE[key]
+    data: dict = {}
+    target = path if path is not None else CONFIG_DIR / _FIELDS_YAML
+    if target.exists():
+        try:
+            import yaml
+
+            raw = yaml.safe_load(target.read_text(encoding="utf-8")) or {}
+            data = {k: v for k, v in raw.items() if isinstance(v, dict)}
+        except Exception:
+            data = {}
+    _OVERRIDE_CACHE[key] = data
+    return data
+
+
+def _normalize(value: str, kind: str | None) -> str | None:
+    """Deterministic value normalization: date/money/upper."""
+    if value is None or not kind or kind == "none":
+        return value
+    if kind == "upper":
+        return value.upper()
+    if kind == "money":
+        return re.sub(r"[$,USD\s]", "", value)
+    if kind == "date":
+        m = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})", value)
+        if m:
+            return value
+        m = re.fullmatch(r"(\d{1,2})/(\d{1,2})/(\d{4}|\d{2})", value)
+        if m:
+            a, b, y = int(m.group(1)), int(m.group(2)), m.group(3)
+            year = f"20{y}" if len(y) == 2 else y
+            if a > 12 >= b:      # day-first (d/m/y)
+                return f"{year}-{b:02d}-{a:02d}"
+            if b > 12 >= a:      # month-first (m/d/y)
+                return f"{year}-{a:02d}-{b:02d}"
+            # ambiguous (both ≤ 12): keep raw, never guess
+        return value
+    return value
+
+
+def extract_fields(text: str, doc_type: str | None = None,
+                   config_path: str | Path | None = None) -> dict:
+    """Extract fields per class schema; unknown types use the generic schema.
+
+    ``config_path`` (optional) points at a YAML override file; when omitted the
+    project ``configs/fields.yaml`` is used if present, else built-in defaults.
+    """
     if not isinstance(text, str):
         raise TypeError("text must be a string")
 
-    schema_key = doc_type if doc_type in _SCHEMAS else "generic"
-    schema = _SCHEMAS.get(schema_key, _GENERIC)
+    path = Path(config_path) if config_path else None
+    overrides = _load_overrides(path)
 
-    fields = {name: _first_match(text, pats) for name, pats in schema.items()}
+    schema_key = doc_type if (doc_type in _SCHEMAS or doc_type in overrides) \
+        else "generic"
+    if schema_key == "generic":
+        schema, normalizers, required = _GENERIC, {}, []
+    else:
+        ov = overrides.get(schema_key, {}) or {}
+        spec_fields = ov.get("fields", {}) or {}
+        default = _SCHEMAS.get(schema_key, {})
+        schema: dict[str, list[str]] = {}
+        normalizers: dict[str, str] = {}
+        for name in sorted(set(default) | set(spec_fields)):
+            if name in spec_fields:
+                spec = spec_fields[name] or {}
+                schema[name] = spec.get("patterns") or default.get(name) or []
+                nrm = spec.get("normalize", "none")
+                if nrm not in (None, "none"):
+                    normalizers[name] = nrm
+            else:
+                schema[name] = default[name]
+        required = list(ov.get("required", _REQUIRED_DEFAULTS.get(schema_key, [])))
+
+    fields = {}
+    for name, pats in schema.items():
+        raw = _first_match(text, pats)
+        fields[name] = _normalize(raw, normalizers.get(name)) \
+            if raw is not None else None
     matched = sum(1 for v in fields.values() if v)
-    return {"doc_type": schema_key, "fields": fields, "matched": matched}
+    missing_required = [name for name in required if not fields.get(name)]
+    return {"doc_type": schema_key, "fields": fields, "matched": matched,
+            "missing_required": missing_required}

@@ -14,7 +14,7 @@ class TextVectorizer:
         cfg = (
             paths.load_config("text")
             if config_path is None
-            else _read_yaml(config_path)
+            else paths.load_yaml_file(config_path)
         )["vectorizer"]["tfidf"]
         self.vectorizer = TfidfVectorizer(
             max_features=int(cfg["max_features"]),
@@ -46,10 +46,3 @@ class TextVectorizer:
     @staticmethod
     def load(path) -> "TextVectorizer":
         return load(path)
-
-
-def _read_yaml(p) -> dict:
-    import yaml
-    from pathlib import Path
-
-    return yaml.safe_load(Path(p).read_text(encoding="utf-8"))

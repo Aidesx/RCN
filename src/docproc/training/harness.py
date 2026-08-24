@@ -73,7 +73,12 @@ def run_training(model, train_ds, val_ds, cfg: dict, run_name: str,
 
     set_seeds(int(cfg["training"]["seed"]))
 
-    snapshot = {"training": cfg["training"], "extra": extra_config or {}}
+    # Snapshot the FULL config (input + architecture + training) so a run
+    # record is self-sufficient for reproduction, not just the training part.
+    snapshot = {
+        "config": cfg,
+        "extra": extra_config or {},
+    }
     (run_dir / "config.yaml").write_text(yaml.safe_dump(snapshot), encoding="utf-8")
 
     history = model.fit(

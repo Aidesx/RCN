@@ -11,7 +11,8 @@ def compute_metrics(y_true: np.ndarray, y_pred: np.ndarray, class_names: list[st
     labels = list(range(len(class_names)))
     return {
         "accuracy": float(np.mean(y_true == y_pred)),
-        "macro_f1": float(f1_score(y_true, y_pred, average="macro", labels=labels)),
+        "macro_f1": float(f1_score(y_true, y_pred, average="macro", labels=labels,
+                                   zero_division=0)),
         "per_class": classification_report(
             y_true, y_pred, labels=labels, target_names=class_names,
             output_dict=True, zero_division=0,
