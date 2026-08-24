@@ -17,7 +17,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from docproc.nlp import render_markdown, understand_file  # noqa: E402
+from docproc.nlp import render_markdown, understand_file  
 
 SUPPORTED_SUFFIXES = {".txt", ".md", ".markdown", ".html", ".htm", ".docx", ".pdf", ".png", ".jpg", ".jpeg"}
 
