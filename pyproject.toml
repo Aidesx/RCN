@@ -4,5 +4,10 @@ version = "0.1.0"
 description = "Narrow AI document processing project (no OCR)"
 
 [tool.pytest.ini_options]
-testpaths = ["../rcn-tests"]
+testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.ruff.lint]
+# Broad excepts are intentional across the pipeline: advisory router,
+# per-file CLI skips, config/artifact fallbacks (spec D2/D3).
+ignore = ["BLE001"]

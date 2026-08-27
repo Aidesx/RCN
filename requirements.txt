@@ -17,5 +17,9 @@ huggingface_hub==1.28.0
 datasets==5.0.1
 pytest==9.1.1
 ruff==0.16.4
+streamlit==1.62.0
 vulture==2.16
 pandas==3.0.5
+torch==2.13.0
+transformers==5.15.1
+sentencepiece==0.2.2
