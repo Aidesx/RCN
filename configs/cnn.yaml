@@ -12,7 +12,6 @@ architecture:
   dropout: 0.5
 training:
   loss: sparse_categorical_crossentropy
-  optimizer: adam
   learning_rate: 0.001
   batch_size: 32
   max_epochs: 30

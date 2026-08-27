@@ -12,3 +12,4 @@ venv/
 AidenOCR/
 .pytest_cache/
 .ruff_cache/
+.rcn_theme

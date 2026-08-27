@@ -17,7 +17,7 @@ invoice:
   fields:
     invoice_number:
       patterns:
-        - '(?:INVOICE|Invoice)\s*(?:#|number|#\s*|No\.?[:\\s]*)\s*([A-Z]*-?\d+)'
+        - '(?:INVOICE|Invoice)\s*(?:#|number|#\s*|No\.?[:\\s]*)\s*([A-Z]{0,5}-?\d+(?:-\d+)*)'
         - '#(INV-\d+)'
       normalize: upper
     date:
