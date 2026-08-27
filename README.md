@@ -1,63 +1,144 @@
-﻿# RCN — Narrow AI Document Processing Project
+﻿# RCN — Narrow AI Document Understanding
 
-> Document Understanding without OCR
+Offline document understanding without OCR. A CLI application that ingests text, files, and folders and produces a layered understanding record — structure, keywords, topics, fields, and summary — entirely on-device.
 
-## Mục tiêu dự án (Project Objective)
+Documents are routed by type: TF-IDF + SVM for text and a small CNN for images/scans. Scanned pages are classified only and never OCR'd. Summarization is extraction-first (MMR over L1+L2) with an optional small local seq2seq model (<7B) and automatic fallback to extractive. All outputs are deterministic and seeded.
 
-Xây dựng một CLI application **hiểu tài liệu** nhận text / file / folder và:
+---
 
-1. **Hiểu nội dung theo tầng** (mục tiêu chính):
-   - **L1 Cấu trúc** ✅ — word → sentence → paragraph kèm thống kê (`docproc.nlp.analyze_structure`)
-   - **L2 Từ khóa** ✅ — top-k keyphrases bằng TF-IDF trong văn bản (`nlp/keywords.py`, uni+bigram, lọc stopwords song ngữ)
-   - **L3 Chủ đề** ✅ — LDA (seed 42), chọn k bằng UMass coherence (`nlp/topics.py`)
-   - **L4 Trường dữ liệu** ✅ — regex schemas theo loại tài liệu: số HĐ, ngày, tổng tiền, bên mua/bán… (`nlp/fields.py`)
-2. **Phân loại loại tài liệu** (router): 6 nhóm `invoice/receipt/report/letter/form/article` — CNN cho ảnh/scan, TF-IDF+SVM cho text; nhãn phụ trợ, thiếu artifact → `unavailable` không fail.
-3. **Trích xuất nội dung** từ PDF-text/DOCX/Markdown/HTML bằng parser deterministic.
-4. **Xuất báo cáo hiểu tài liệu**: `understand()` → JSON + Markdown + terminal (`nlp/report.py` + CLI `scripts/understand_text.py`).
+## Quick links
 
-**Ranh giới phạm vi (không đổi):** không OCR; không LLM/API ngoài — ưu tiên kiến thức khóa học; scanned page chỉ được *phân loại*, không đọc chữ; MobileNetV2/fusion chuyển **FUTURE**. Kế hoạch chi tiết: `docs/design/01..06` (bộ v2, 2026-08-23).
+- [Architecture](./ARCHITECTURE.md) — system overview and pipeline
+- [In-repo Code Map](./src/ARCHITECTURE.md) — per-module implementation details
+- [Contributing](./CONTRIBUTING.md) — how to work in this repo
 
-## Input / Output
+---
 
-| Input | Cách xử lý |
-|---|---|
-| PDF (text layer) | Trích text deterministic (text branch) |
-| PDF (scanned) | Render trang → image branch (phân loại, **không OCR**) |
-| DOCX / Markdown / HTML | Parse → trích text |
-| PNG / JPG | Image branch trực tiếp |
+## Tech stack
 
-| Output | Định dạng |
-|---|---|
-| Structured data | JSON (category, confidence, per-page, extracted text) |
+| Layer | Technology |
+| --- | --- |
+| Language | Python 3.11 |
+| Text classification | scikit-learn TF-IDF + LinearSVC / RandomForest + GridSearchCV (5-fold, f1_macro) |
+| Image classification | TensorFlow 2.21 — Architecture A: Conv2D(32,5)->MaxPool->Conv2D(64,5)->MaxPool->Dense(256)->Dropout(0.5)->Softmax |
+| NLP | In-document TF-IDF (uni+bigram, bilingual stopwords), LDA (sklearn, seed 42, UMass coherence), regex schemas per class |
+| Summarization | Extraction (MMR, λ=0.7) + Abstractive mT5/vit5-base (<7B) via `transformers` + `Seq2SeqTrainer` |
+| Document I/O | PyMuPDF, pypdf, pdfplumber, python-docx, BeautifulSoup4, html2text |
+| App | Streamlit 1.62 — `scripts/app.py` (RCN Studio) |
+| Tests / Lint | pytest 9.1.1, ruff 0.16.4 |
+
+---
+
+## Getting started
+
+Create the environment and install pinned dependencies:
+
+```bash
+python -m venv .venv
+# Windows
+.venv\Scripts\activate
+# macOS / Linux
+source .venv/bin/activate
+
+pip install -r requirements.txt
+```
+
+Download the summarization checkpoint once (mT5 XLSum multilingual, <7B):
+
+```bash
+python scripts/download_summarizer.py
+```
+
+Run the understanding pipeline from the CLI:
+
+```bash
+# single text
+python scripts/understand_text.py --text "Your document text here"
+
+# single file (pdf-text, docx, md, html, png/jpg)
+python scripts/understand_text.py --file datasets/text/invoice/invoice_0001.txt
+
+# folder (batch)
+python scripts/understand_text.py --folder datasets/text --out runs/demo
+
+# demo fixture (no input required)
+python scripts/understand_text.py --demo
+```
+
+Run the web UI (Streamlit):
+
+```bash
+.venv/Scripts/python -m streamlit run scripts/app.py
+```
+
+| Surface | URL | Notes |
+| --- | --- | --- |
+| RCN Studio | `http://localhost:8501` | Streamlit app in `scripts/app.py`. Batch mode auto-scans `datasets/text`. |
+| CLI JSON | `stdout` + `*.understanding.json` | Same `understand()` seam as the UI. |
+| CLI Markdown | `*.understanding.md` | Rendered via `docproc.nlp.report.render_markdown`. |
+
+Run tests and lint:
+
+```bash
+python -m pytest -q
+python -m ruff check src scripts
+```
+
+Fine-tune the summarizer (single script works on CPU or GPU/Colab):
+
+```bash
+python scripts/train_summarizer.py \
+  --train rcn-aux/datasets/summary/xlsum_vietnamese_train.jsonl \
+  --val   rcn-aux/datasets/summary/xlsum_vietnamese_val.jsonl \
+  --epochs 2 --batch-size 8 --base-model VietAI/vit5-base
+```
+
+| Input | Handling |
+| --- | --- |
+| PDF (text layer) | Deterministic text extraction (text branch) |
+| PDF (scanned) | Render page → image branch (classify only, **no OCR**) |
+| DOCX / Markdown / HTML | Parse → extract text |
+| PNG / JPG | Image branch directly |
+
+| Output | Format |
+| --- | --- |
+| Structured record | JSON (`doc_type`, `structure`, `keywords`, `topics`, `fields`, `summary`) |
 | Report | Markdown |
-| Summary | Terminal text |
+| Summary | Terminal / UI |
 
-## Hiện trạng (Status)
+---
 
-- [x] Design phase hoàn tất (spec chi tiết: `01-knowledge-audit` → `06-project-specification`, xem `docs/design/`)
-- [x] Repository scaffold + môi trường Python (`.venv`, TF 2.21, scikit-learn, PyMuPDF, pytest...) + README/ARCHITECTURE
-- [x] Dataset v0: **700 trang** — 500 RVL-CDIP (100/class × letter, form, report, article, invoice) + 200 SROIE receipts — nguồn ngoài, `EXTENSION`, provenance từng ảnh tại `datasets/raw/PROVENANCE.csv` (cột `source`: rvlcdip/sroie); split manifest 70/15/15 theo document đã build (0 leak, đủ 6 class); **spot-check nhãn đã duyệt bởi user (2026-08-19)**
-- [x] Stage 3 preprocessing: `src/docproc/preprocess/` (image 64×64/224×224 deterministic + TF-IDF wrapper) — golden tests, **18/18 pass**
-- [x] **Stages 4–6: Self-built CNN (Architecture A) train + evaluate** — E1 best val_accuracy 60% (epoch 27/30); frozen test: accuracy **57.1%**, macro-F1 **0.514**, majority baseline 28.6% → **gate PASS** (+28.6 pts, ≥0.50 F1). Artifacts: `runs/E1/` (weights `best.keras`, history, metrics, confusion matrix, learning curves)
-- [x] Stage 7 Document I/O: `src/docproc/io/` — file detection (magic bytes + scanned-PDF probe), parsers (PDF/DOCX/MD/HTML), renderer + embedded-image extraction, structured error contracts — golden tests
-- [x] Architecture deepening: `docproc/paths` (một nguồn duy nhất cho layout/config), dataset module với registry 2 arms (cnn 64×64 / finetune 224×224), `evaluation.report` dùng chung cho mọi experiment — manifest rebuild **byte-identical**, E1 tái lập chính xác
-- [x] Stage 8 Text baseline (E0b): corpus tổng hợp 360 docs (`datasets/text/`) + TF-IDF+SVM/RF GridSearchCV — test acc **1.000** / macro-F1 **1.000** vs baseline 16.7% → gate PASS; artifacts `models/artifacts/text_*` + `runs/E0b/`
-- [x] **Understanding pipeline v2 (L1+L2+L3+L4 + router + report + CLI)** — keyphrases TF-IDF, LDA+UMass, `understand()` seam, CLI file/folder/demo — test suite **167/167 pass**
-- [ ] FUTURE: MobileNetV2 fine-tune (E3/E4) · fusion E5 · QA/tóm tắt
-
-## Cấu trúc
+## Repository structure
 
 ```
-src/docproc/{io, preprocess, models, training, evaluation, nlp}
-configs/            # mọi hyperparameter + fields.yaml (schema override)
-scripts/            # CLI chính (understand_text.py) + tooling dataset/train/experiments
-docs/               # design set snapshot (01..06) + manifest-schema.md
-datasets/           # raw/ text/ splits/ (gitignored)
-models/artifacts/   # router artifacts: vectorizer, SVM, CNN checkpoint refs (gitignored)
-runs/               # per-experiment logs + metrics (gitignored)
-requirements.txt    # pin đúng phiên bản venv đã kiểm chứng
+AGENTS.md                   Agent context — read first
+README.md                   This file
+ARCHITECTURE.md             System overview and pipeline (this repo)
+src/ARCHITECTURE.md         Per-module implementation map
+configs/                    All hyperparameters + fields.yaml (schema overrides)
+  dataset.yaml              Classes + split 70/15/15
+  text.yaml                 TF-IDF + SVM/RF GridSearch
+  cnn.yaml                  Architecture A (64×64) + finetune (224×224)
+  finetune.yaml             MobileNetV2 phases (FUTURE)
+  pipeline.yaml             classification.confidence_threshold
+  summary.yaml              Summary mode + abstractive checkpoint
+  fields.yaml               L4 regex schema overrides per class
+src/docproc/                Core — see src/ARCHITECTURE.md
+  paths.py                  Single source of truth for layout + config loading
+  io/                       detect (magic bytes + scan probe) · parsers · render
+  preprocess/               image (64×64 / 224×224 bicubic) · text (TF-IDF wrapper)
+  models/                   cnn.py (Architecture A) · text_classifier.py (SVM/RF)
+  training/                 data.py (2-arm registry) · harness.py (seeded fit)
+  evaluation/               metrics.py · report.py (shared across experiments)
+  nlp/                      structure (L1) · keywords (L2) · topics (L3 LDA+UMass)
+                            fields (L4) · summary (L5 extractive+abstractive) · report (seam)
+docs/design/                01-knowledge-audit → 06-project-specification + 07-summary
+datasets/                   raw/ text/ splits/ (gitignored, see PROVENANCE.csv)
+models/artifacts/           Trained artifacts (gitignored): text_vectorizer.joblib,
+                            text_model_svm.joblib, summarizer_mt5/, vit5_finetuned/
+runs/                       Per-experiment logs + metrics (gitignored): E1/, E0b/, E-U0/ ...
+scripts/                    CLI + tooling: understand_text.py, app.py, train_summarizer.py
+requirements.txt            Pinned versions verified in .venv
 ```
 
-*Kiểm chứng chất lượng: **167/167 testcases pass** (`python -m pytest -q`). Cài đặt môi trường: `pip install -r requirements.txt`.*
-
-*File này sẽ được cập nhật dần theo tiến độ implementation.*
+> Quality gate: **186/186 tests pass** (`python -m pytest -q`). Environment is `.venv` (TF 2.21, scikit-learn 1.9, torch 2.6+cu126, transformers 5.15).

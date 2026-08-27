@@ -1,0 +1,16 @@
+# Summary feature (spec 07-summary v1): extraction-first, model-assisted.
+# Extractive builds on L1 structure + L2 keyphrases; abstractive swaps in a
+# small (<7B) seq2seq checkpoint and falls back to extractive when missing.
+default_mode: extractive
+k_sentences: 3
+seed: 42
+extractive:
+  keyword_pool: 30      # L2 keyphrases feeding the sentence scorer
+  mmr_lambda: 0.7       # relevance vs redundancy trade-off (MMR)
+  position_bonus: 0.1   # bonus added to paragraph-initial sentences
+abstractive:
+  checkpoint: csebuetnlp/mT5_multilingual_XLSum   # <7B, covers VI+EN
+  finetuned_checkpoint: vit5_soup_a0.5   # trộn weights: vit5_finetuned + VietNews (model soup) — chi tiết: rcn-aux/PROGRESS.md
+  max_new_tokens: 128
+  no_repeat_ngram_size: 3      # kills degenerate repetition loops
+  min_new_tokens: 8

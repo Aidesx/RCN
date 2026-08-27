@@ -1,0 +1,5 @@
+Receipt
+Payment Receipt
+Total:
+99
+USD

@@ -1,0 +1,1 @@
+Invoice number 48291 issued by Acme Corporation. Total amount due is 1250 dollars. Payment must be received within 30 days of the issue date.

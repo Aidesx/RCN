@@ -5,8 +5,10 @@ Usage:
   python scripts/understand_text.py <folder>          recurse: one report per file
   python scripts/understand_text.py --demo            built-in sample
 Options:
-  --out DIR      write reports here (default: alongside the input file)
-  --k-keywords N top-k keyphrases (default 10)
+  --out DIR         write reports here (default: alongside the input file)
+  --k-keywords N    top-k keyphrases (default 10)
+  --summary-k N     sentences kept by the summary (default: configs/summary.yaml)
+  --summary-mode M  extractive | abstractive (default: configs/summary.yaml)
 Exit codes: 0 = all reports produced · 2 = nothing understood / usage error
 """
 import argparse
@@ -17,15 +19,22 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+<<<<<<< Updated upstream
 from docproc.nlp import render_markdown, understand_file  
+=======
+from docproc.nlp import render_markdown, understand_file
+>>>>>>> Stashed changes
 
 SUPPORTED_SUFFIXES = {".txt", ".md", ".markdown", ".html", ".htm", ".docx", ".pdf", ".png", ".jpg", ".jpeg"}
 
 
-def _process(path: Path, out_dir: Path, k_keywords: int) -> tuple[bool, str]:
+def _process(path: Path, out_dir: Path, k_keywords: int,
+             summary_mode: str | None, summary_k: int | None) -> tuple[bool, str]:
     try:
         t0 = time.perf_counter()
-        record = understand_file(path, k_keywords=k_keywords)
+        record = understand_file(path, k_keywords=k_keywords,
+                                 summary_mode=summary_mode,
+                                 summary_k=summary_k)
         elapsed = time.perf_counter() - t0
     except Exception as exc:
         print(f"[skip ] {path}: {exc}")
@@ -41,6 +50,13 @@ def _process(path: Path, out_dir: Path, k_keywords: int) -> tuple[bool, str]:
     summary = f"label={label}"
     if n_para is not None:
         summary += f", paragraphs={n_para}, keywords={len(record.get('keywords', []))}"
+    sm = record.get("summary")
+    if sm:
+        c = sm.get("compression") or {}
+        if c.get("kept") is not None and c.get("original_sentences"):
+            summary += f", summary={c['kept']}/{c['original_sentences']}"
+        elif sm.get("text"):
+            summary += ", summary=generated"
     print(f"[ok   ] {path} -> {json_path.name} + {md_path.name} ({elapsed:.2f}s) {summary}")
     return True, ""
 
@@ -51,6 +67,11 @@ def main() -> int:
     ap.add_argument("--demo", action="store_true")
     ap.add_argument("--out", default=None, help="output directory for reports")
     ap.add_argument("--k-keywords", type=int, default=10)
+    ap.add_argument("--summary-k", type=int, default=None,
+                    help="sentences kept by summary (default: config)")
+    ap.add_argument("--summary-mode", default=None,
+                    choices=["extractive", "abstractive"],
+                    help="summary engine (default: config)")
     args = ap.parse_args()
 
     if args.demo:
@@ -76,7 +97,11 @@ def main() -> int:
     if target.is_dir():
         # include extensionless files too — detection content-sniffs them;
         # truly unsupported types surface as transparent [skip] lines below.
-        files = sorted(f for f in target.rglob("*") if f.is_file())
+        # bỏ qua đầu ra của chính mình (*.understanding.*) khi quét lại.
+        files = sorted(f for f in target.rglob("*")
+                       if f.is_file()
+                       and not f.name.endswith((".understanding.json",
+                                                ".understanding.md")))
     else:
         files = [target]
 
@@ -85,7 +110,8 @@ def main() -> int:
 
     ok = 0
     for f in files:
-        success, _ = _process(f, out_dir, args.k_keywords)
+        success, _ = _process(f, out_dir, args.k_keywords,
+                              args.summary_mode, args.summary_k)
         ok += int(success)
 
     if not files:
