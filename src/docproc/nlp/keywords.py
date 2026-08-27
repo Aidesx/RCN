@@ -4,6 +4,7 @@ from __future__ import annotations
 import math
 import re
 from functools import lru_cache
+from itertools import pairwise
 from pathlib import Path
 
 from docproc.nlp.structure import analyze_structure
@@ -64,7 +65,7 @@ def extract_keywords(text: str, k: int = 10) -> dict:
 
     # Adjacent-pair counts; skip self-pairs (a repeated single word must not
     # produce a degenerate "word word" keyphrase).
-    pair_counts = Counter((a, b) for a, b in zip(doc_tokens, doc_tokens[1:]) if a != b)
+    pair_counts = Counter(pair for pair in pairwise(doc_tokens) if pair[0] != pair[1])
     for (a, b), cnt in pair_counts.items():
         bg = f"{a} {b}"
         if bg not in candidates:

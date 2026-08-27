@@ -13,7 +13,6 @@ from docproc.paths import CONFIG_DIR
 
 _FIELDS_YAML = "fields.yaml"
 _OVERRIDE_CACHE: dict[str, dict] = {}
-_REQUIRED_DEFAULTS: dict[str, list[str]] = {}
 
 _DATE_ISO = r"\d{4}-\d{2}-\d{2}"
 _DATE_DMY = r"\d{1,2}/\d{1,2}/\d{2,4}"
@@ -21,7 +20,7 @@ _MONEY = r"(?:\$|USD\s*)?\d[\d,]*(?:\.\d{1,2})?"
 
 _SCHEMAS: dict[str, dict[str, list[str]]] = {
     "invoice": {
-        "invoice_number": [r"(?:INVOICE|Invoice)\s*(?:#|number|#\s*|No\.?[:\s]*)\s*([A-Z]*-?\d+)",
+        "invoice_number": [r"(?:INVOICE|Invoice)\s*(?:#|number|#\s*|No\.?[:\s]*)\s*([A-Z]{0,5}-?\d+(?:-\d+)*)",
                            r"#(INV-\d+)"],
         "date": [rf"Date:\s*({_DATE_ISO}|{_DATE_DMY})", rf"issue[d]?\s*(?:date)?[:\s]*({_DATE_ISO}|{_DATE_DMY})", rf"({_DATE_ISO}|{_DATE_DMY})"],
         "total_due": [rf"(?:TOTAL DUE|Total due|Total)\s*:?\s*\$?\s*({_MONEY})"],
@@ -160,7 +159,7 @@ def extract_fields(text: str, doc_type: str | None = None,
                     normalizers[name] = nrm
             else:
                 schema[name] = default[name]
-        required = list(ov.get("required", _REQUIRED_DEFAULTS.get(schema_key, [])))
+        required = list(ov.get("required", []))
 
     fields = {}
     for name, pats in schema.items():

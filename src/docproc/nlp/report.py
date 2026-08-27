@@ -5,7 +5,13 @@ from pathlib import Path
 
 from docproc import paths
 from docproc.io.detect import (
-    DOCX, HTML, IMAGE, MARKDOWN, PDF_SCANNED, PDF_TEXT, UNKNOWN,
+    DOCX,
+    HTML,
+    IMAGE,
+    MARKDOWN,
+    PDF_SCANNED,
+    PDF_TEXT,
+    UNKNOWN,
     ParseError,
     detect_file_type,
 )
@@ -13,8 +19,8 @@ from docproc.io.parsers import extract_text
 from docproc.nlp.fields import extract_fields
 from docproc.nlp.keywords import extract_keywords
 from docproc.nlp.structure import analyze_structure
+from docproc.nlp.summary import summarize, summarize_extractive
 from docproc.nlp.topics import extract_topics
-
 
 # High-precision text cues per class — last-resort router when the SVM
 # model is below the confidence threshold or artifacts are missing.
@@ -82,11 +88,10 @@ def _router_text(text: str) -> dict:
         best_cls, best_n = max(cues.items(), key=lambda kv: kv[1],
                                default=(None, 0))
         if best_n >= 1:
-            return {"label": best_cls, "via": "rule_cues",
-                    "confidence": round(conf, 4)}
+            return {"label": best_cls, "via": "rule_cues", "confidence": None}
         return {"label": None, "via": "low_confidence",
                 "confidence": round(conf, 4)}
-    except Exception as exc:  # artifact corruption must not kill the report
+    except Exception as exc:
         return {"label": "unavailable", "via": f"error: {exc}"}
 
 
@@ -99,7 +104,7 @@ def _router_image(image) -> dict:
         import numpy as np
         import tensorflow as tf
 
-        from docproc.preprocess.image import image_to_tensor, _model_size
+        from docproc.preprocess.image import _model_size, image_to_tensor
 
         model = tf.keras.models.load_model(ckpt)
         x = image_to_tensor(image, _model_size("cnn"))[None, ...]
@@ -112,7 +117,8 @@ def _router_image(image) -> dict:
 
 
 def understand(text: str, source: str = "inline", k_keywords: int = 10,
-               k_topics: int | None = None) -> dict:
+               k_topics: int | None = None, summary_mode: str | None = None,
+               summary_k: int | None = None) -> dict:
     """Full understanding record for a raw text string."""
     structure = analyze_structure(text)
     keywords = extract_keywords(text, k=k_keywords)
@@ -122,7 +128,7 @@ def understand(text: str, source: str = "inline", k_keywords: int = 10,
     fields = (extract_fields(text, router.get("label"))
               if router.get("label") not in (None, "unavailable")
               else extract_fields(text, None))  # generic schema, same contract
-    return {
+    record = {
         "source": source,
         "doc_type": router,
         "structure": structure,
@@ -130,10 +136,19 @@ def understand(text: str, source: str = "inline", k_keywords: int = 10,
         "topics": topics,
         "fields": fields,
     }
+    try:
+        record["summary"] = summarize(text, mode=summary_mode, k=summary_k)
+    except NotImplementedError:
+        # D2 graceful degradation: requested engine unavailable -> extractive.
+        record["summary"] = summarize_extractive(text, k=summary_k)
+        record["summary"]["engine_fallback"] = True
+    return record
 
 
 def understand_file(path, k_keywords: int = 10,
-                    k_topics: int | None = None) -> dict:
+                    k_topics: int | None = None,
+                    summary_mode: str | None = None,
+                    summary_k: int | None = None) -> dict:
     """Dispatch by file type per 02 §3; classification-only for images/scans."""
     p = Path(path)
     detection = detect_file_type(p)
@@ -168,7 +183,8 @@ def understand_file(path, k_keywords: int = 10,
             f"type '{detection.file_type}' has no understanding path")
 
     record = understand(text, source=str(p), k_keywords=k_keywords,
-                        k_topics=k_topics)
+                        k_topics=k_topics, summary_mode=summary_mode,
+                        summary_k=summary_k)
     record["file_type"] = detection.file_type
     return record
 
@@ -180,11 +196,32 @@ def render_markdown(record: dict) -> str:
     label = dt.get("label") or "unavailable"
     lines += [f"- **doc_type:** {label}"
               + (f" (via {dt['via']})" if dt.get("via") else ""), ""]
+    sm = record.get("summary")
+    if sm:
+        engine = sm.get("engine", "extractive")
+        if engine == "abstractive":
+            head = f"## Summary (abstractive · {sm.get('model', '')})"
+            lines += [head, "", sm.get("text", ""), ""]
+        else:
+            kept = len(sm.get("sentences", []))
+            total = (sm.get("compression") or {}).get("original_sentences")
+            head = f"## Summary ({engine}"
+            if total:
+                head += f" · kept {kept}/{total}"
+            lines += [head + ")", ""]
+            for i, s in enumerate(sm.get("sentences", []), 1):
+                lines.append(f"{i}. {s['text']}")
+            if sm.get("sentences"):
+                lines.append("")
+        if sm.get("engine_fallback"):
+            lines += [("> engine fallback: requested engine unavailable, "
+                       "extractive used"), ""]
     if "structure" in record:
         s = record["structure"]["stats"]
         lines += ["## Structure", "",
-                  f"- paragraphs: {s['paragraphs']} · sentences: {s['sentences']} · "
-                  f"words: {s['words']} · unique: {s['unique_words']} · chars: {s['characters']}",
+                  ("- paragraphs: "
+                   f"{s['paragraphs']} · sentences: {s['sentences']} · "
+                   f"words: {s['words']} · unique: {s['unique_words']} · chars: {s['characters']}"),
                   ""]
         for para in record["structure"]["paragraphs"]:
             lines.append(f"### ¶{para['index']} ({para['sentence_count']} sentences, "
@@ -193,7 +230,7 @@ def render_markdown(record: dict) -> str:
                 lines.append(f"{i}. {sent}")
             lines.append("")
     if record.get("keywords"):
-        lines += ["## Keywords (top %d)" % len(record["keywords"]), "",
+        lines += [f"## Keywords (top {len(record['keywords'])})", "",
                   "| term | score | count |", "|---|---|---|"]
         lines += [f"| {kw['term']} | {kw['score']} | {kw['count']} |"
                   for kw in record["keywords"]]
