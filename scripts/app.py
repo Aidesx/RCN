@@ -18,6 +18,13 @@ from datetime import datetime
 from io import StringIO
 from pathlib import Path
 
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+from matplotlib.colors import LinearSegmentedColormap
+import numpy as np
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
@@ -481,6 +488,226 @@ def topic_bars(topics, mixture):
         right.write(", ".join(t.get("top_words", [])[:8]))
         st.divider()
     st.caption("Số nhóm chủ đề được chọn tự động sao cho các nhóm tách bạch nhất.")
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Biểu đồ thuật toán (matplotlib, dùng chung theme)
+# ═══════════════════════════════════════════════════════════════════
+
+INK = "#111827"
+CYAN = "#06b6d4"
+CYAN_LIGHT = "#67e8f9"
+PAPER = "#f8fafc"
+ACCENT = "#0284c7"
+GRAY = "#6b7280"
+PALETTE = ["#06b6d4", "#0284c7", "#0369a1", "#075985", "#0c4a6e", "#0891b2",
+           "#0e7490", "#155e75", "#164e63", "#1e3a5f"]
+
+def _algo_style():
+    """Trả về style dict cho matplotlib, tôn trọng dark/light theme."""
+    dark = st.session_state.get("dark", True)
+    ink = "#ffffff" if dark else "#111827"
+    paper = "#0a0d3a" if dark else "#f8fafc"
+    grid = "#2a2f63" if dark else "#e5e7eb"
+    return {
+        "axes.edgecolor": ink, "axes.labelcolor": ink,
+        "xtick.color": ink, "ytick.color": ink, "text.color": ink,
+        "figure.facecolor": paper, "axes.facecolor": paper,
+        "grid.color": grid, "grid.linestyle": "--", "grid.linewidth": 0.5,
+        "legend.facecolor": paper, "legend.edgecolor": grid,
+        "font.size": 10, "axes.titlesize": 13, "axes.labelsize": 11,
+    }
+
+
+def chart_cnn():
+    """CNN Training Curves (từ runs/E1/history.csv)."""
+    history_path = ROOT / "runs" / "E1" / "history.csv"
+    if not history_path.exists():
+        return None
+    history = list(csv.DictReader(open(history_path)))
+    epochs = [int(r["epoch"]) for r in history]
+    acc = [float(r["accuracy"]) for r in history]
+    val_acc = [float(r["val_accuracy"]) for r in history]
+
+    with plt.rc_context(_algo_style()):
+        fig, ax = plt.subplots(figsize=(8, 3.5))
+        ax.plot(epochs, acc, "o-", color=CYAN, linewidth=2, markersize=3, label="Train Accuracy")
+        ax.plot(epochs, val_acc, "s-", color=ACCENT, linewidth=2, markersize=3, label="Val Accuracy")
+        ax.set_xlabel("Epoch"); ax.set_ylabel("Accuracy")
+        ax.set_title("CNN — Đường cong huấn luyện (Architecture A, 64×64)")
+        ax.legend(loc="lower right"); ax.grid(zorder=0)
+        ax.set_ylim(0, 1.05)
+        plt.tight_layout()
+    return fig
+
+
+def chart_svm_confusion():
+    """Confusion Matrix (từ runs/E1/confusion_matrix.csv)."""
+    cm_path = ROOT / "runs" / "E1" / "confusion_matrix.csv"
+    if not cm_path.exists():
+        return None
+    cm = list(csv.DictReader(open(cm_path)))
+    classes = list(cm[0].keys())[1:]
+    n = len(classes)
+    mat = np.zeros((n, n), dtype=int)
+    for i, row in enumerate(cm):
+        for j, cls in enumerate(classes):
+            mat[i, j] = int(row[cls])
+
+    with plt.rc_context(_algo_style()):
+        fig, ax = plt.subplots(figsize=(6.5, 5))
+        cmap = LinearSegmentedColormap.from_list("cyan", ["white", CYAN, ACCENT])
+        im = ax.imshow(mat, cmap=cmap, aspect="auto")
+        for i in range(n):
+            for j in range(n):
+                color = "white" if mat[i, j] > mat.max() * 0.5 else \
+                        st.session_state.get("dark", True) and "#ffffff" or INK
+                ax.text(j, i, str(mat[i, j]), ha="center", va="center",
+                        fontsize=11, fontweight="bold", color=color)
+        ax.set_xticks(range(n)); ax.set_xticklabels(classes, rotation=30, ha="right", fontsize=9)
+        ax.set_yticks(range(n)); ax.set_yticklabels(classes, fontsize=9)
+        ax.set_xlabel("Predicted"); ax.set_ylabel("True")
+        total = mat.sum()
+        correct = mat.diagonal().sum()
+        ax.set_title(f"CNN Confusion Matrix ({correct}/{total} correct, {total} test)")
+        plt.tight_layout()
+    return fig
+
+
+def chart_tfidf_algo(keywords):
+    """TF-IDF bar chart (từ kết quả phân tích thực tế)."""
+    if not keywords:
+        return None
+    terms = [k["term"] if isinstance(k, dict) else str(k) for k in keywords[:10]]
+    scores = [k["score"] if isinstance(k, dict) else 0 for k in keywords[:10]]
+    # Đảo ngược để bar ngang hiển thị từ trên xuống
+    terms.reverse(); scores.reverse()
+
+    with plt.rc_context(_algo_style()):
+        fig, ax = plt.subplots(figsize=(8, 3.2))
+        colors = [CYAN if s < max(scores) else ACCENT for s in scores]
+        ax.barh(terms, scores, color=colors, edgecolor="white", linewidth=0.5, zorder=3)
+        for bar, s in zip(ax.patches, scores):
+            ax.text(bar.get_width() + max(scores) * 0.01, bar.get_y() + bar.get_height() / 2,
+                    f"{s:.3f}", va="center", fontsize=8, color=INK)
+        ax.set_xlabel("TF-IDF Score"); ax.set_title("TF-IDF — Top từ khóa (in-document)")
+        ax.grid(axis="x", zorder=0)
+        ax.set_xlim(0, max(scores) * 1.2)
+        plt.tight_layout()
+    return fig
+
+
+def chart_lda_coherence(topics_data):
+    """UMass Coherence curve (từ kết quả phân tích)."""
+    curve = topics_data.get("coherence_curve") or []
+    if len(curve) < 2:
+        return None
+    ks = [c["k"] for c in curve]
+    coh = [c["umass"] for c in curve]
+    best_k = topics_data.get("k")
+
+    with plt.rc_context(_algo_style()):
+        fig, ax = plt.subplots(figsize=(8, 3.5))
+        ax.plot(ks, coh, "o-", color=INK, linewidth=2, markersize=8,
+                markerfacecolor=CYAN, markeredgecolor=INK, zorder=3)
+        if best_k and best_k in ks:
+            idx = ks.index(best_k)
+            ax.plot(ks[idx], coh[idx], "o", color=ACCENT, markersize=12,
+                    markeredgecolor=INK, linewidth=2, zorder=4)
+            ax.annotate(f"k={best_k}", xy=(ks[idx], coh[idx]),
+                        xytext=(ks[idx] + 0.5, coh[idx] + 0.3),
+                        arrowprops=dict(arrowstyle="->", color=INK),
+                        fontsize=10, fontweight="bold", color=ACCENT)
+        ax.set_xlabel("Số chủ đề (k)"); ax.set_ylabel("UMass Coherence")
+        ax.set_title("LDA — Chọn k tối ưu bằng UMass Coherence")
+        ax.set_xticks(ks); ax.grid(zorder=0)
+        plt.tight_layout()
+    return fig
+
+
+def chart_pca_algo():
+    """PCA Scree plot (từ TF-IDF của 12 câu mẫu)."""
+    from sklearn.decomposition import PCA
+    from sklearn.feature_extraction.text import TfidfVectorizer
+
+    samples = [
+        "Hệ thống RCN phân tích tài liệu tiếng Việt bằng học máy.",
+        "Pipeline 5 lớp xử lý tuần tự từ cấu trúc đến tóm tắt.",
+        "TF-IDF trích xuất từ khóa quan trọng trong văn bản.",
+        "LDA khám phá chủ đề ẩn dựa trên phân phối từ.",
+        "CNN phân loại ảnh tài liệu quét vào 6 nhóm khác nhau.",
+        "MMR tạo bản tóm tắt trích xuất không trùng lặp.",
+        "Hệ thống hoạt động ngoại tuyến không cần kết nối Internet.",
+        "PCA giảm chiều dữ liệu từ 5000 đặc trưng xuống 35 chiều.",
+        "K-Means gom cụm từ khóa thành các nhóm chủ đề.",
+        "Toàn bộ pipeline chạy trên máy tính cá nhân thông thường.",
+        "Mô hình vit5-base tóm tắt tóm lược văn bản tiếng Việt.",
+        "Đánh giá bằng ROUGE-1, ROUGE-2, ROUGE-L trên tập test.",
+    ]
+    vec = TfidfVectorizer(max_features=100)
+    X = vec.fit_transform(samples).toarray()
+    pca = PCA(random_state=42).fit(X)
+    n_bars = min(10, len(pca.explained_variance_ratio_))
+    var = pca.explained_variance_ratio_[:n_bars]
+    cumsum = np.cumsum(var)
+
+    with plt.rc_context(_algo_style()):
+        fig, ax = plt.subplots(figsize=(8, 3.5))
+        x = np.arange(1, n_bars + 1)
+        colors = [ACCENT if i == 0 else CYAN for i in range(n_bars)]
+        ax.bar(x, var * 100, color=colors, edgecolor="white", linewidth=0.5, zorder=3)
+        ax2 = ax.twinx()
+        ax2.plot(x, cumsum * 100, "o-", color=INK, linewidth=2.5, markersize=5, zorder=4)
+        ax2.set_ylabel("Cumulative %", color=INK)
+        ax2.set_ylim(0, 105)
+        ax.set_xlabel("Principal Component"); ax.set_ylabel("Variance Explained (%)")
+        ax.set_title("PCA — Phương sai giải thích (Scree Plot)")
+        ax.set_xticks(x); ax.grid(axis="y", zorder=0)
+        ax.text(1, var[0] * 100 + 1, f"{var[0]*100:.1f}%", ha="center", fontsize=9, fontweight="bold", color=ACCENT)
+        plt.tight_layout()
+    return fig
+
+
+def chart_kmeans_algo():
+    """K-Means Elbow Method (từ TF-IDF của 12 câu mẫu)."""
+    from sklearn.cluster import KMeans
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.feature_extraction.text import TfidfVectorizer
+
+    samples = [
+        "Hệ thống RCN phân tích tài liệu tiếng Việt bằng học máy.",
+        "Pipeline 5 lớp xử lý tuần tự từ cấu trúc đến tóm tắt.",
+        "TF-IDF trích xuất từ khóa quan trọng trong văn bản.",
+        "LDA khám phá chủ đề ẩn dựa trên phân phối từ.",
+        "CNN phân loại ảnh tài liệu quét vào 6 nhóm khác nhau.",
+        "MMR tạo bản tóm tắt trích xuất không trùng lặp.",
+        "Hệ thống hoạt động ngoại tuyến không cần kết nối Internet.",
+        "PCA giảm chiều dữ liệu từ 5000 đặc trưng xuống 35 chiều.",
+        "K-Means gom cụm từ khóa thành các nhóm chủ đề.",
+        "Toàn bộ pipeline chạy trên máy tính cá nhân thông thường.",
+        "Mô hình vit5-base tóm tắt tóm lược văn bản tiếng Việt.",
+        "Đánh giá bằng ROUGE-1, ROUGE-2, ROUGE-L trên tập test.",
+    ]
+    vec = TfidfVectorizer(max_features=100)
+    X = vec.fit_transform(samples).toarray()
+    X_scaled = StandardScaler().fit_transform(X)
+    ks = range(1, min(11, len(samples) + 1))
+    inertias = [KMeans(n_clusters=k, random_state=42, n_init=10).fit(X_scaled).inertia_
+                for k in ks]
+    diffs = [inertias[i] - inertias[i+1] for i in range(len(inertias) - 1)]
+    elbow_k = diffs.index(max(diffs)) + 2 if diffs else 4
+
+    with plt.rc_context(_algo_style()):
+        fig, ax = plt.subplots(figsize=(8, 3.5))
+        ax.plot(list(ks), inertias, "o-", color=INK, linewidth=2.5, markersize=8,
+                markerfacecolor=CYAN, markeredgecolor=INK, zorder=3)
+        ax.axvline(x=elbow_k, color=ACCENT, linestyle="--", linewidth=2, alpha=0.8,
+                   label=f"Elbow: k={elbow_k}")
+        ax.set_xlabel("Số cụm (k)"); ax.set_ylabel("Inertia (WCSS)")
+        ax.set_title("K-Means — Elbow Method chọn số cụm tối ưu")
+        ax.set_xticks(list(ks)); ax.legend(); ax.grid(zorder=0)
+        plt.tight_layout()
+    return fig
 
 
 # Các thuật toán ML/DL được dùng trong từng bước phân tích (hiển thị UI).
@@ -1033,11 +1260,73 @@ if rec:
                        "trích xuất câu, kết quả vẫn đầy đủ.")
 
     with tab_al:
-        st.markdown("**Các thuật toán ML/DL đang chạy trong project:**")
-        algo_panel()
-        st.write("")
-        st.caption("SVM + CNN: phân loại tài liệu · TF-IDF/LDA/K-means: hiểu "
-                   "nội dung · MMR/T5: tóm tắt — toàn bộ chạy offline trên máy.")
+            st.markdown("**Biểu đồ trực quan cho từng thuật toán trong pipeline:**")
+            st.write("")
+
+            # CNN
+            st.markdown("#### 🖼️ CNN — Phân loại ảnh")
+            fig_cnn = chart_cnn()
+            if fig_cnn:
+                st.pyplot(fig_cnn)
+                plt.close(fig_cnn)
+            else:
+                st.caption("⚠️ Chưa có dữ liệu huấn luyện CNN (thiếu runs/E1/history.csv).")
+
+            st.divider()
+
+            # SVM / Confusion Matrix
+            st.markdown("#### 📊 Phân loại văn bản — Confusion Matrix")
+            fig_svm = chart_svm_confusion()
+            if fig_svm:
+                st.pyplot(fig_svm)
+                plt.close(fig_svm)
+            else:
+                st.caption("⚠️ Chưa có dữ liệu confusion matrix (thiếu runs/E1/confusion_matrix.csv).")
+
+            st.divider()
+
+            # TF-IDF
+            st.markdown("#### 🔑 TF-IDF — Từ khóa")
+            kws = rec.get("keywords") or []
+            fig_tfidf = chart_tfidf_algo(kws)
+            if fig_tfidf:
+                st.pyplot(fig_tfidf)
+                plt.close(fig_tfidf)
+            else:
+                st.caption("⚠️ Chưa có từ khóa để vẽ biểu đồ.")
+
+            st.divider()
+
+            # LDA Coherence
+            st.markdown("#### 🧩 LDA — UMass Coherence")
+            tp = rec.get("topics") or {}
+            fig_lda = chart_lda_coherence(tp)
+            if fig_lda:
+                st.pyplot(fig_lda)
+                plt.close(fig_lda)
+            else:
+                st.caption("⚠️ Chưa đủ dữ liệu chủ đề (cần ≥3 đoạn).")
+
+            st.divider()
+
+            # PCA
+            st.markdown("#### 📉 PCA — Giảm chiều dữ liệu")
+            fig_pca = chart_pca_algo()
+            if fig_pca:
+                st.pyplot(fig_pca)
+                plt.close(fig_pca)
+
+            st.divider()
+
+            # K-Means
+            st.markdown("#### 🎯 K-Means — Phân cụm")
+            fig_km = chart_kmeans_algo()
+            if fig_km:
+                st.pyplot(fig_km)
+                plt.close(fig_km)
+
+            st.divider()
+            st.caption("Tất cả thuật toán chạy offline trên máy — TF-IDF, LDA, PCA, K-Means, CNN, SVM, MMR, T5.")
 
     with st.expander("🔧 Chi tiết kỹ thuật (cho demo/bảo vệ)"):
         st.json(rec, expanded=False)
