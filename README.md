@@ -141,4 +141,3 @@ scripts/                    CLI + tooling: understand_text.py, app.py, train_sum
 requirements.txt            Pinned versions verified in .venv
 ```
 
-> Quality gate: **186/186 tests pass** (`python -m pytest -q`). Environment is `.venv` (TF 2.21, scikit-learn 1.9, torch 2.6+cu126, transformers 5.15).
