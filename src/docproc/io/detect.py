@@ -108,7 +108,9 @@ def detect_file_type(path) -> Detection:
     text_head = ""
     try:
         text_head = head.decode("utf-8", errors="replace")
-    except Exception:
+    except UnicodeDecodeError:
+        # decode with errors="replace" cannot normally fail; keep the guard
+        # so text_head always ends up a str (bandit B110-safe).
         pass
 
     if suffix in _TEXT_SUFFIXES:

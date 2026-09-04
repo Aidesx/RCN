@@ -9,7 +9,7 @@ RUNS_DIR = ROOT / "runs"
 DATASETS_DIR = ROOT / "datasets"
 SPLITS_DIR = DATASETS_DIR / "splits"
 RAW_DIR = DATASETS_DIR / "raw"
-TESTS_DIR = ROOT.parent / "rcn-tests"  # suite kept outside the repo (user decision, 06 v2.7)
+TESTS_DIR = ROOT / "tests"  # suite moved into the repo (restructure 2026-08-27)
 
 
 def load_yaml_file(path) -> dict:

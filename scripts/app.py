@@ -21,7 +21,6 @@ from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
 
@@ -191,8 +190,6 @@ def inject_css(dark: bool):
           background:{surface}; border-radius:12px 12px 0 0;
           color:{muted} !important; font-weight:600; }}
       .stTabs [aria-selected="true"] {{ color:#ffffff !important; }}"""
-        marquee_colors = ("linear-gradient(90deg,#5865f2,#ec48bd)",
-                          "rgba(255,255,255,.9)")
     else:
         bg_base = "#f5f7ff"
         surface = "#ffffff"
@@ -214,8 +211,6 @@ def inject_css(dark: bool):
           background:#ececfc; border-radius:12px 12px 0 0;
           color:#5a6189 !important; font-weight:600; }}
       .stTabs [aria-selected="true"] {{ color:#5865f2 !important; }}"""
-        marquee_colors = ("linear-gradient(90deg,#5865f2,#ec48bd)",
-                          "rgba(255,255,255,.9)")
     st.markdown(f"""
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
@@ -345,8 +340,8 @@ def to_markdown(rec):
 
         return render_markdown(rec)
     except Exception:
-        lines = [f"# Báo cáo hiểu tài liệu", "",
-                 f"- Nguồn: `{rec.get('source', '')}`"]
+        lines = ["# Báo cáo hiểu tài liệu", "",
+                         f"- Nguồn: `{rec.get('source', '')}`"]
         dt = rec.get("doc_type") or {}
         if dt.get("label"):
             name, _, _ = label_meta(dt["label"])
@@ -427,7 +422,6 @@ def kw_chart(keywords):
     if not rows:
         return
     df = pd.DataFrame(rows)
-    dark = st.session_state.get("dark", True)
     chart = (alt.Chart(df)
              .mark_bar(cornerRadius=6)
              .encode(
@@ -557,7 +551,7 @@ def chart_svm_confusion():
     with plt.rc_context(_algo_style()):
         fig, ax = plt.subplots(figsize=(6.5, 5))
         cmap = LinearSegmentedColormap.from_list("cyan", ["white", CYAN, ACCENT])
-        im = ax.imshow(mat, cmap=cmap, aspect="auto")
+        ax.imshow(mat, cmap=cmap, aspect="auto")
         for i in range(n):
             for j in range(n):
                 color = "white" if mat[i, j] > mat.max() * 0.5 else \
