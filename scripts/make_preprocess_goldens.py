@@ -1,10 +1,4 @@
-"""Generate Stage 3 golden files: deterministic fixture image + expected tensors.
-
-Run once (or after changing the preprocessing contract):
-    python scripts/make_preprocess_goldens.py
-Golden arrays freeze the exact decode/resize/normalize behavior; tests assert
-the module output equals them bit-for-bit.
-"""
+import csv
 import sys
 from pathlib import Path
 

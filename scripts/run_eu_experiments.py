@@ -1,4 +1,3 @@
-"""E-U0 keyword-scorer + E-U2 topic-coherence experiments -> runs/E-U*."""
 import json
 import sys
 from collections import Counter
@@ -6,12 +5,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from docproc import paths  # noqa: E402
-from docproc.models.text_classifier import (  # noqa: E402
+from docproc import paths
+from docproc.models.text_classifier import (
     load_split_texts,
     read_text_manifest,
 )
-from docproc.nlp.keywords import _tokens, extract_keywords  # noqa: E402
+from docproc.nlp.keywords import _tokens, extract_keywords
 
 
 def _frequency_top(text: str, k: int = 10) -> list[str]:
@@ -80,7 +79,7 @@ def run_eu2(docs: dict[str, str], k_min: int = 3, k_max: int = 10) -> dict:
 
 
 def main() -> int:
-    texts, _ = load_split_texts("train")  # corpus-level experiments on train docs
+    texts, _ = load_split_texts("train")
     names = [r["doc_id"] for r in read_text_manifest("train")]
     docs = dict(zip(names, texts))
 

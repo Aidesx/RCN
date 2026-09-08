@@ -1,9 +1,3 @@
-"""Stage 8: document-level 70/15/15 stratified split for the synthetic text corpus.
-
-Input : datasets/text/PROVENANCE_TEXT.csv
-Output: datasets/splits/text_manifest.csv + text_split_stats.json
-Rules : same discipline as the image split (04 §1) — seed 42, frozen test.
-"""
 import csv
 import json
 import random
@@ -13,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from docproc import paths  # noqa: E402
+from docproc import paths
 
 SEED = 42
 rows = list(csv.DictReader(

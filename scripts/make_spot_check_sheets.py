@@ -1,8 +1,3 @@
-"""Generate spot-check contact sheets: 20 sampled pages per class in a grid.
-
-Output: datasets/splits/spot_check/<class>.png — user reviews visually and
-confirms label agreement (target >=99% per configs/dataset.yaml).
-"""
 import csv
 import os
 import random

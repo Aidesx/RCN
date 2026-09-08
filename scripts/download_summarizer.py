@@ -1,13 +1,4 @@
-"""Download the small (<7B) multilingual abstractive summarizer checkpoint.
-
-Usage:
-  python scripts/download_summarizer.py
-
-Fetches configs/summary.yaml -> abstractive.checkpoint from HuggingFace into
-models/artifacts/summarizer_mt5/ so summarize_abstractive() runs offline.
-Prefers safetensors; falls back to pytorch_model.bin when unavailable.
-"""
-import sys
+import csv
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))

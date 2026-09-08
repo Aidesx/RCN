@@ -1,16 +1,3 @@
-# L4 field schemas — per-class OVERRIDE của built-in defaults trong
-# `src/docproc/nlp/fields.py`. Class khai báo ở đây sẽ THAY THẾ hoàn toàn
-# schema built-in cùng tên; class không khai báo → giữ built-in.
-#
-# Cấu trúc một class:
-#   required: [tên field, ...]   -> field bắt buộc; thiếu sẽ ghi vào
-#                                   `missing_required` trong kết quả
-#   fields:
-#     <tên field>:
-#       patterns: [regex, ...]    -> pattern đầu khớp thắng (thứ tự quan trọng)
-#       normalize: date | money | upper | none   (mặc định none)
-#
-# Lưu ý: dùng YAML single-quote để giữ nguyên backslash của regex.
 
 invoice:
   required: [invoice_number, total_due]

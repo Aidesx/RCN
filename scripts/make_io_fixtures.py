@@ -1,10 +1,4 @@
-"""Generate Stage 7 I/O fixtures + goldens (deterministic, run once).
-
-Creates in tests/fixtures/io/: text_pdf.pdf, scanned_pdf.pdf, embedded_pdf.pdf,
-invoice.docx, notes.md, page.html, photo.png, and malformed files
-(truncated.pdf, corrupt.docx, fake.png, unknown.bin).
-Goldens (expected extracted text) live beside them as *.expected.txt.
-"""
+import csv
 from pathlib import Path
 
 import pymupdf

@@ -1,12 +1,3 @@
-"""Stage 2: build the document-level 70/15/15 split manifest.
-
-Input : datasets/raw/PROVENANCE.csv (existing pages, folder-per-class)
-Output: datasets/splits/manifest.csv + datasets/splits/split_stats.json
-Rules : 04 §1 + docs/manifest-schema.md — split by doc_id, stratified by class,
-        seed from configs/dataset.yaml, frozen test split.
-
-Uses docproc.paths for all locations, so it runs from any working directory.
-"""
 import csv
 import json
 import os
@@ -17,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from docproc import paths  # noqa: E402
+from docproc import paths
 
 CFG = paths.dataset_config()
 RAW = paths.RAW_DIR

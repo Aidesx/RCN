@@ -1,13 +1,4 @@
-﻿"""RCN Studio - web UI cho việc hiểu tài liệu (tách rời core).
-
-Run (from RCN/):
-    .venv/Scripts/python -m streamlit run scripts/app.py
-
-Hai nguồn dữ liệu:
-  - "Du lieu mau": record demo dong san trong file -> xem duoi UI khong can core.
-  - "Tai lieu cua ban": goi seam thuc understand()/understand_file() khi core san sang.
-Khong sua bat ky file core nao; ket qua JSON/Markdown giong het CLI.
-"""
+﻿
 import csv
 import html
 import json
@@ -37,9 +28,9 @@ except ImportError:
 st.set_page_config(page_title="RCN Studio", page_icon="📄", layout="wide")
 
 # ------------------------------------------------------------------ constants
-# Palette "Blurple" (Discord-style): deep-indigo canvas + Blurple/green/magenta.
+# Palette "Blurple": deep-indigo canvas + Blurple/green/magenta.
 # Light = nền #f5f7ff, Dark = canvas #0a0d3a. Display font Space Grotesk.
-BRAND = "#5865f2"          # Blurple — Discord brand
+BRAND = "#5865f2"          # Blurple —
 BRAND_ON = "#ffffff"
 GREEN_CTA = "#35ed7e"      # electric green — high-intent actions
 MAGENTA = "#ec48bd"        # vibrant magenta — gradient feature panels
@@ -60,9 +51,7 @@ ENGINE_BADGE = {
     "extractive": ("📋 Trích xuất các câu quan trọng nhất", BRAND),
     "abstractive": ("✍️ Sinh đoạn văn mới bằng model nhỏ", MAGENTA),
 }
-SUPPORTED = ["md", "txt", "html", "htm", "docx", "pdf", "png", "jpg", "jpeg"]
-
-# ------------------------------------------------------------ demo record ---
+SUPPORTED = ["md", "txt", "html", "htm", "docx"]
 DEMO_RECORD = {
     "source": "(dữ liệu mẫu) hoa_don_mau.txt",
     "file_type": "txt",
@@ -142,7 +131,6 @@ DEMO_RECORD = {
     },
 }
 
-# Bản tóm tắt abstractive giả lập cho chế độ mẫu (để review được cả 2 badge)
 DEMO_ABSTRACTIVE_TEXT = (
     "Hóa đơn số HD-2026-0841 do Công ty TNHH An Phát phát hành ngày 20/08/2026 "
     "cho Công ty CP Minh Khoa, ghi nhận lô hàng giấy photo A4 với tổng giá trị "

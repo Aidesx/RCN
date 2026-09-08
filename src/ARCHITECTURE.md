@@ -30,7 +30,6 @@ file/txt đầu vào
 | `dataset_config()` / `pipeline_config()` | Config dataset / pipeline |
 | `class_names()` | 6 lớp chuẩn: article, form, invoice, letter, receipt, report |
 
-Mọi module khác **không hardcode đường dẫn** — luôn đi qua đây.
 
 ## `io/` — ingestion tài liệu
 
@@ -93,5 +92,3 @@ Phân biệt quan trọng:
 3. **Understanding-first**: L1–L3 là sản phẩm chính; router phụ trợ.
 4. **Không OCR, không LLM/API cloud** khi chạy; model seq2seq nhỏ (<7B) chạy local offline được phép (07-summary).
 5. Mọi hyperparameter sống trong `configs/`, không hardcode trong code.
-
-Kiểm chứng: bộ test 186/186 pass (`python -m pytest -q` từ thư mục gốc).

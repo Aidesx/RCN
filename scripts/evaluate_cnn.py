@@ -1,8 +1,4 @@
-"""Evaluate a trained CNN run on the frozen test split (thin CLI adapter).
-
-Usage: python scripts/evaluate_cnn.py --run-name E1 [--arm cnn|finetune]
-Artifacts are written by docproc.evaluation.report.report_run.
-"""
+import csv
 import argparse
 import json
 import sys

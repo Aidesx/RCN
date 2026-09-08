@@ -1,7 +1,3 @@
-"""Synthetic text corpus for the text baseline: 60 docs/class × 6, txt/md/html, seed 42.
-
-Output: datasets/text/<class>/<doc_id>.{txt|md|html} + PROVENANCE_TEXT.csv
-"""
 import csv
 import random
 import sys

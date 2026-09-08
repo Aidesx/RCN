@@ -1,13 +1,3 @@
-"""Build the v0 dataset from RVL-CDIP mirror (jordyvl/rvl_cdip_100_examples_per_class).
-
-Keeps only the 5 classes present in RVL-CDIP that match project classes:
-    letter, form, report (scientific report), article (news article), invoice.
-receipt is NOT in RVL-CDIP -> self-collected later (spec 04 §1 sources a/b).
-
-Merges the mirror's train/validation/test splits as raw source material; the
-project's own document-level 70/15/15 split is created later (05 Stage 2).
-Output: datasets/raw/<class>/*.png (grayscale) + datasets/raw/PROVENANCE.csv.
-"""
 import csv
 import io
 import os

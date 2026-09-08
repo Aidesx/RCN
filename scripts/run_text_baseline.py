@@ -1,9 +1,3 @@
-"""Stage 8 / E0b: train + evaluate the TF-IDF+SVM/RF text baseline.
-
-Usage: python scripts/run_text_baseline.py
-Writes: models/artifacts/text_*.{joblib}, runs/E0b/metrics_eval.json,
-        runs/E0b/confusion_matrix.csv
-"""
 import json
 import sys
 from pathlib import Path

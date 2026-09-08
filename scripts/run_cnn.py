@@ -1,8 +1,3 @@
-"""Train the self-built CNN (Architecture A) on the manifest splits.
-
-Smoke run (Stage 4 gate):  python scripts/run_cnn.py --run-name E1_smoke --fraction 0.3 --epochs 3
-Full E1 (Stage 5):         python scripts/run_cnn.py --run-name E1
-"""
 import argparse
 import json
 import sys
@@ -10,11 +5,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from docproc import paths  # noqa: E402
-from docproc.models.cnn import build_model  # noqa: E402
-from docproc.training.data import load_split_arrays, make_datasets  # noqa: E402
-from docproc.training.harness import run_training  # noqa: E402
-
+from docproc import paths
+from docproc.models.cnn import build_model
+from docproc.training.data import load_split_arrays, make_datasets
+from docproc.training.harness import run_training
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
