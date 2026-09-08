@@ -134,6 +134,9 @@ Khuyến nghị demo: **vit5_v1** — hồ sơ train đầy đủ, tóm tắt si
 đầu), 0% số ảo, ~9s/bài CPU. `vit5_soup_0.7_v1` điểm cao hơn chút nhưng là blend thí nghiệm
 không có hồ sơ công thức. Kể chuyện model soup dùng `vit5_soup_0.5_v1` (công thức: v1 ⊕ VietNews @0.5).
 
+Chi tiết phương pháp, dữ liệu đánh giá (12 bài đóng gói trong repo), kết quả đầy đủ + cách tái
+chạy: **`benchmarks/RESULTS.md`**.
+
 ---
 
 ## Repository structure
@@ -166,6 +169,7 @@ models/artifacts/           Trained artifacts (gitignored): text_vectorizer.jobl
                             text_model_svm.joblib, summarizer_mt5/, vit5_v1/
 runs/                       Per-experiment logs + metrics (gitignored): E1/, E0b/, E-U0/ ...
 scripts/                    CLI + tooling: understand_text.py, app.py, train_summarizer.py
+benchmarks/                 Eval set (12 bài VI) + run_benchmark.py + results versioned — RESULTS.md
 requirements.txt            Pinned versions verified in .venv
 ```
 
