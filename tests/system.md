@@ -1,78 +1,83 @@
-# RCN — Test Suite Map
+# Test suite map
 
-> Tổ chức tests theo module tương ứng với `src/docproc/`. Mỗi thư mục con = 1 thành phần hệ thống.
+How the `tests/` tree is organized, what each directory covers, and how the suite is split
+between functional and model-dependent tests. Tests mirror `src/docproc/` module by module.
 
-## Cấu trúc
+## Structure
 
-```
+```text
 tests/
-├── system.md                   ← file này
-├── fixtures/                   ← dữ liệu mẫu dùng chung (PDF, DOCX, ảnh...)
-├── golden/                     ← mảng numpy đóng băng (preprocessing)
+├── system.md                   ← this file
+├── fixtures/                   shared sample documents (PDF, DOCX, images, …)
+├── golden/                     frozen numpy arrays (preprocessing)
 │
-├── io/                         ← ingestion: detect file type + parse text + render pages
-│   ├── test_detect.py          magic bytes + probe PDF scan → phân loại
-│   ├── test_parsers.py         trích text từ PDF/DOCX/MD/HTML (golden-tested)
-│   └── test_render.py          PDF → ảnh + embedded images
+├── io/                         ingestion: detect file type + parse text + render pages
+│   ├── test_detect.py         magic bytes + scanned-PDF probe → classification
+│   ├── test_parsers.py        text from PDF/DOCX/MD/HTML (golden-tested)
+│   └── test_render.py         PDF → images + embedded images
 │
-├── preprocess/                 ← chuẩn bị input cho model
-│   ├── test_image.py           resize bicubic → tensor (golden: khớp numpy từng pixel)
-│   └── test_text.py            TF-IDF vectorizer wrapper (save/load joblib)
+├── preprocess/                 model-input preparation
+│   ├── test_image.py          bicubic resize → tensor (golden: pixel-exact vs .npy)
+│   └── test_text.py           TF-IDF vectorizer wrapper (joblib save/load)
 │
-├── models/                     ← định nghĩa kiến trúc model
-│   └── test_cnn.py             Architecture A: Conv2D→MaxPool→Dense→Softmax
+├── models/                     model architecture definitions
+│   └── test_cnn.py            Architecture A: Conv2D→MaxPool→Dense→Softmax
 │
-├── training/                   ← hạ tầng huấn luyện
-│   ├── test_data.py            registry dataset 2-arm (64×64 / 224×224)
-│   └── test_harness.py         seeded fit + snapshot config + EarlyStopping
+├── training/                   training infrastructure
+│   ├── test_data.py           two-arm dataset registry (64×64 / 224×224)
+│   └── test_harness.py        seeded fit + config snapshot + EarlyStopping
 │
-├── evaluation/                 ← đo lường
-│   ├── test_metrics.py         accuracy, macro-F1, confusion matrix, acceptance gate
-│   └── test_eval_report.py     frozen-test report + learning curves
+├── evaluation/                 measurement
+│   ├── test_metrics.py        accuracy, macro-F1, confusion matrix, acceptance gate
+│   └── test_eval_report.py    frozen-test report + learning curves
 │
-├── nlp/                        ← trái tim "hiểu tài liệu" (L1–L5)
-│   ├── test_structure.py       L1: word → sentence → paragraph + stats
-│   ├── test_keywords.py        L2: top-k keyphrases (in-doc TF-IDF, uni+bigram)
-│   ├── test_topics.py          L3: LDA + UMass coherence k-selection
-│   ├── test_fields.py          L4: regex schema per class (invoice/receipt...)
-│   ├── test_summary.py         L5: extractive MMR + abstractive seq2seq + fallback
-│   └── test_report.py          seam understand() + render_markdown()
+├── nlp/                        the document-understanding core (L1–L5)
+│   ├── test_structure.py      L1: word → sentence → paragraph + stats
+│   ├── test_keywords.py       L2: top-k keyphrases (in-doc TF-IDF, uni+bigram)
+│   ├── test_topics.py         L3: LDA + UMass coherence k-selection
+│   ├── test_fields.py         L4: per-class regex schema (invoice/receipt/…)
+│   ├── test_summary.py        L5: extractive MMR + abstractive seq2seq + fallback
+│   └── test_report.py         understand() seam + render_markdown()
 │
-├── text_classifier/            ← router phân loại văn bản
-│   └── test_baseline.py        GridSearchCV SVM/RF + artifact dump
+├── text_classifier/            text router
+│   └── test_baseline.py       GridSearchCV SVM/RF + artifact dump
 │
-├── dataset/                    ← dữ liệu
-│   └── test_module.py          manifest + split 70/15/15 + leak check
+├── dataset/                    data module
+│   └── test_module.py         manifest + 70/15/15 split + leak check
 │
-└── ui/                         ← kiểm thử giao diện (Streamlit AppTest)
-    ├── test_smoke.py           render không crash + demo mode + dán text thật
-    ├── test_features.py        highlight, coherence chart, lịch sử, batch+CSV
-    └── test_e2e_core.py        E2E: 4 luồng core thật (extractive/abstractive/upload/batch)
+└── ui/                         Streamlit UI (AppTest — no real browser)
+    ├── test_smoke.py          renders without crashing; demo mode; real-text paste
+    ├── test_features.py       highlighting, coherence chart, history, batch + CSV
+    └── test_e2e_core.py       E2E core flows (extractive/abstractive/upload/batch)
 ```
 
-## Chạy
+## Running
 
 ```bash
-# Từ thư mục gốc RCN/
-python -m pytest -q              # mặc định: 177 bài FUNCTIONAL (không cần model/artifact)
-python -m pytest -q -m model     # 12 bài MODEL-DEPENDENT (cần SVM/keras/checkpoint tóm tắt)
-python -m pytest tests/io/ -q    # chỉ ingestion
+# From the repo root RCN/
+python -m pytest -q              # default: 177 FUNCTIONAL tests (no model artifacts needed)
+python -m pytest -q -m model     # 12 MODEL-DEPENDENT tests (SVM / keras CNN / seq2seq checkpoint)
+python -m pytest tests/io/ -q    # just ingestion
 ```
 
-## Phân vai (2026-09-08)
+## Role split (2026-09-08)
 
-- **Suite mặc định (`pytest -q`) = functional**: L1–L5, io, dataset, text classifier logic,
-  UI chrome — deterministic, chạy được khi chưa có model/artifact (pyproject: `addopts = -m "not model"`).
-- **`pytest -m model` = model-dependent**: cần artifact thật —
-  `tests/ui/*` (luồng UI chạy core THẬT: SVM + abstractive checkpoint),
-  `tests/training/test_harness.py` (train CNN keras), `TestRouterGate` 4 bài dùng SVM thật,
-  `test_abstractive_smoke_when_checkpoint_present`, `test_e1_report_matches_recorded_metrics`.
-- Chất lượng model KHÔNG đo bằng unit test → benchmark riêng (ROUGE/copy/num-hall trên 12 bài báo VI,
-  kết quả lưu ngoài repo, README mục Quality & benchmarking).
+- **Default suite (`pytest -q`) = functional.** L1–L5, IO, dataset, text-classifier logic, UI
+  chrome — deterministic and green even on a machine with no trained artifacts
+  (`pyproject.toml` sets `addopts = -m "not model"`).
+- **`pytest -m model` = model-dependent.** Needs the real artifacts:
+  `tests/ui/*` (UI runs the *real* core: SVM + abstractive checkpoint),
+  `tests/training/test_harness.py` (trains the keras CNN), the `TestRouterGate` group (4 tests,
+  real SVM), `test_abstractive_smoke_when_checkpoint_present`, and
+  `test_e1_report_matches_recorded_metrics`.
+- **Model quality is not measured by unit tests.** Summarizer quality has its own benchmark —
+  ROUGE-2 / verbatim-copy / number-hallucination on a bundled 12-document Vietnamese eval set;
+  results and reproducer live in `benchmarks/` (see `benchmarks/RESULTS.md`).
 
-## Quy ước
+## Conventions
 
-- **Deterministic**: mọi test có seed 42, cùng input → cùng output
-- **Golden-tested**: file I/O đối chiếu với `.expected.txt`; tensor ảnh khớp `.npy`
-- **UI tests**: dùng `streamlit.testing.v1.AppTest`, không cần browser thật
-- **Fallback-safe**: test abstractive tự skip nếu thiếu checkpoint
+- **Deterministic** — every test seeds 42; same input → same output.
+- **Golden-tested** — file IO is compared against `.expected.txt` fixtures; image tensors are
+  compared pixel-exact against frozen `.npy` arrays.
+- **UI tests** use `streamlit.testing.v1.AppTest` — no browser required.
+- **Fallback-safe** — abstractive tests self-skip when the checkpoint is missing.

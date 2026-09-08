@@ -1,94 +1,107 @@
-# docproc — Kiến trúc chi tiết `src/`
+# `src/docproc/` — code map
 
-> Tài liệu tham chiếu code trong `src/docproc/`. Đồng bộ với `ARCHITECTURE.md` gốc và spec `docs/design/06-project-specification.md`. Cập nhật 2026-08-24.
+Deep reference for everything under `src/docproc/`. If you want the system-level view, read
+[../ARCHITECTURE.md](../ARCHITECTURE.md) first; if you want to know which file does what, stay
+here. Last synced 2026-09-09 against the working tree.
 
-## Luồng dữ liệu tổng quát
+## Data flow
 
 ```
-file/txt đầu vào
+input file / text
    │
-   ├─ io.detect_file_type()      nhận diện loại (magic bytes + probe PDF scan)
-   ├─ io.extract_text()          trích text theo định dạng
+   ├─ io.detect_file_type()     magic bytes + scan probe → kind of file
+   ├─ io.extract_text()         deterministic text extraction per format (no OCR)
    │
-   ├─ report._router_text/_image gán nhãn loại tài liệu (phụ trợ)
+   ├─ report._router_text()     text → SVM label        (advisory)
+   ├─ report._router_image()    image/scan → CNN label  (advisory)
    │
-   ├─ structure.analyze_structure()   L1 word → câu → đoạn
-   ├─ keywords.extract_keywords()     L2 top-k keyphrase TF-IDF
-   ├─ topics.extract_topics()         L3 LDA + UMass (+ K-Means đặt nhãn)
-   ├─ fields.extract_fields()         L4 regex trường dữ liệu theo nhãn
-   ├─ summary.summarize()             L5 tóm tắt (extractive | abstractive + fallback)
+   ├─ structure.analyze_structure()   L1  word → sentence → paragraph
+   ├─ keywords.extract_keywords()     L2  top-k TF-IDF keyphrases
+   ├─ topics.extract_topics()         L3  LDA + UMass coherence (+ labeled reps)
+   ├─ fields.extract_fields()         L4  regex fields per doc_type
+   ├─ summary.summarize()             L5  extractive MMR | abstractive seq2seq + fallback
    │
-   └─ report.understand()        SEAM DUY NHẤT → record dict
-      report.render_markdown()   → Markdown cho người đọc
+   └─ report.understand()             THE seam → record dict
+      report.render_markdown()        → human-readable Markdown
 ```
 
-## `paths.py` — nguồn sự thật về đường dẫn & config
+## `paths.py` — layout & config authority
 
-| Hàm | Tác dụng |
-|---|---|
-| `load_config(name)` | Nạp `configs/<name>.yaml` |
-| `dataset_config()` / `pipeline_config()` | Config dataset / pipeline |
-| `class_names()` | 6 lớp chuẩn: article, form, invoice, letter, receipt, report |
+The only module that knows where things live (`ROOT / CONFIG_DIR / RUNS_DIR / DATASETS_DIR /
+ARTIFACTS_DIR`). Everything else imports from here — no hardcoded paths anywhere else.
 
+| Function | Purpose |
+| --- | --- |
+| `load_config(name)` | load `configs/<name>.yaml` |
+| `class_names()` | the six classes: article, form, invoice, letter, receipt, report |
+| `artifacts_dir()` etc. | resolved artifact/runs/datasets directories |
 
-## `io/` — ingestion tài liệu
+## `io/` — ingestion
 
-| File | Nội dung chính | Vai trò |
-|---|---|---|
-| `detect.py` | `detect_file_type()` — magic bytes + sniff text format + đếm char PDF; `Detection`; lỗi có cấu trúc `DocumentIOError` / `ParseError` / `UnsupportedFormatError` | Quyết định đi nhánh nào (text / ảnh / scan) |
-| `parsers.py` | `extract_text()` điều phối `_extract_pdf/docx/markdown/html` | Trích text deterministic, không OCR |
-| `render.py` | `render_pdf_pages()` (PDF→ảnh, dpi mặc định), `extract_embedded_images_pdf()` | Chỉ để *phân loại* trang scan, không đọc chữ |
+| File | Contents | Role |
+| --- | --- | --- |
+| `detect.py` | `detect_file_type()` — magic bytes + text-format sniff + scanned-PDF character probe; structured errors `DocumentIOError` / `ParseError` / `UnsupportedFormatError` | decides the branch: text / image / scan |
+| `parsers.py` | `extract_text()` dispatches `_extract_pdf / _extract_docx / _extract_markdown / _extract_html` | deterministic text extraction, no OCR |
+| `render.py` | `render_pdf_pages()` (PDF → images, default dpi), `extract_embedded_images_pdf()` | feeds the image branch — pages are *classified*, never read |
 
-## `nlp/` — trái tim "hiểu tài liệu" (L1–L4 + báo cáo)
+## `preprocess/` — model inputs
 
-| File | Tầng | Thuật toán |
-|---|---|---|
-| `structure.py` | L1 | `analyze_structure()`: tách đoạn → câu (`_split_sentences`) → từ, trả stats + danh sách ¶ |
-| `keywords.py` | L2 | `extract_keywords()`: TF-IDF trong-văn-bản trên uni+bigram, lọc stopwords (`stopwords.txt`, song ngữ) + số |
-| `topics.py` | L3 | `extract_topics()`: **LDA** (seed 42), chọn k bằng **UMass coherence** (k=3..10); `_cluster_representatives()`: **PCA + K-Means** chọn keyphrase đại diện làm nhãn topic dễ đọc |
-| `fields.py` | L4 | `extract_fields(text, doc_type)`: regex schema theo lớp (số HĐ, ngày → ISO, tổng tiền, bên mua/bán...); override qua `configs/fields.yaml`; chuẩn hóa giá trị (`_normalize`) |
-| `summary.py` | L5 | `summarize_extractive()`: chấm điểm câu bằng keyphrase L2 + MMR khử trùng lặp (deterministic); `summarize_abstractive()`: sinh đoạn mới bằng checkpoint nhỏ <7B tại `models/artifacts/summarizer_mt5/` (mặc định mT5 XLSum VI+EN; `finetuned_checkpoint` ưu tiên) — thiếu model/deps ⇒ `NotImplementedError`, caller fallback extractive (D2); model load có `lru_cache`. Config: `configs/summary.yaml` |
-| `report.py` | Ghép | **Seam duy nhất**: `understand(text)` / `understand_file(path)` → record `{source, doc_type, structure, keywords, topics, fields, summary, timing}`; `render_markdown(record)`; router text `_router_text()` load artifacts SVM, router ảnh `_router_image()` gọi CNN |
+| File | Contents |
+| --- | --- |
+| `image.py` | decode RGB → **bicubic** resize → float32 [0,1]. `cnn_tensor()` = 64×64×3 (used by Architecture A). `finetune_tensor()` = 224×224×3 exists for the *unshipped* finetune arm (`configs/finetune.yaml`). Fully deterministic |
+| `text.py` | `TextVectorizer` — TF-IDF wrapper (uni+bigram, bilingual stopwords), `save()/load()` via joblib |
 
-Nguyên tắc: **router chỉ là nhãn phụ trợ** — thiếu artifact/model → `"unavailable"`, pipeline L1–L4 vẫn chạy, không fail.
+## `models/` — router architecture
 
-## `preprocess/` — chuẩn bị input cho model
+Two kinds of thing live here — be careful not to confuse them:
 
-| File | Vai trò |
-|---|---|
-| `image.py` | Decode RGB → resize **bicubic** → float32 [0,1]. Hai arm kích thước: `cnn_tensor()` 64×64×3, `finetune_tensor()` 224×224×3 (FUTURE). Deterministic hoàn toàn |
-| `text.py` | `TextVectorizer`: wrapper TF-IDF (uni+bigram, stopwords), `save()/load()` joblib |
+| File | Contents |
+| --- | --- |
+| `cnn.py` | `build_model()` — **Architecture A** exactly as declared in `configs/cnn.yaml`: Conv2D(32,5)-Pool-Conv2D(64,5)-Pool-Flatten-Dense(256)-Dropout(0.5)-Softmax(6); Adam lr=1e-3, sparse categorical CE |
+| `text_classifier.py` | `train_baseline()` — GridSearchCV over LinearSVC vs RandomForest (5-fold, `f1_macro`), writes artifacts; `evaluate_baseline()` — test eval + majority baseline + acceptance gate |
 
-## `models/` — định nghĩa kiến trúc router (chưa train)
+The **learned weights** are *not* in this directory:
 
-| File | Nội dung |
-|---|---|
-| `cnn.py` | `build_model()` dựng **Architecture A** đúng theo `configs/cnn.yaml`: Conv(32,5)-Pool-Conv(64,5)-Pool-Flatten-Dense(256)-Dropout(0.5)-Softmax(C); Adam lr=0.001, sparse CE |
-| `text_classifier.py` | `train_baseline()`: GridSearchCV (LinearSVC vs RandomForest, 5-fold f1_macro) → dump artifact vào `../../models/artifacts/`; `evaluate_baseline()`: test + majority baseline + acceptance gate |
+- `models/artifacts/text_vectorizer.joblib`, `models/artifacts/text_model_svm.joblib` — the
+  trained text router (rebuilt 2026-09-08 by `scripts/run_text_baseline.py`, see `runs/E0b`).
+- `runs/E1/best.keras` — the trained image CNN.
+- `models/artifacts/summarizer_mt5/`, `models/artifacts/vit5_*/` — abstractive summarizer
+  checkpoints.
 
-Phân biệt quan trọng:
-- Thư mục này = **bản thiết kế** (code kiến trúc).
-- `../../models/artifacts/` (ngoài src) = **model đã học xong** (`text_vectorizer.joblib`, `text_model_svm.joblib`) mà CLI load lúc chạy.
-- CNN checkpoint đã train nằm ở `runs/E1/best.keras`.
+All artifact directories are gitignored — they are reproduced, never committed.
 
-## `training/` — hạ tầng huấn luyện dùng chung
+## `training/` — shared training infrastructure
 
-| File | Vai trò |
-|---|---|
-| `data.py` | Registry dataset 2 arms (cnn 64×64 / finetune 224×224): `read_manifest()`, `load_split_arrays()`, `make_datasets()` từ `datasets/splits/manifest.csv` |
-| `harness.py` | `run_training()`: set seed 42, snapshot config đầy đủ vào `runs/<tên>/config.yaml`, fit + EarlyStopping/ModelCheckpoint, ghi `history.csv` + `metrics.json` |
+| File | Purpose |
+| --- | --- |
+| `data.py` | dataset registry (image arms 64×64 / 224×224): `read_manifest()`, `load_split_arrays()`, `make_datasets()` from `datasets/splits/manifest.csv` |
+| `harness.py` | `run_training()` — seed 42, snapshot config into `runs/<name>/config.yaml`, EarlyStopping + ModelCheckpoint, write `history.csv` + `metrics.json` |
 
-## `evaluation/` — đo lường dùng chung mọi experiment
+## `evaluation/` — shared measurement
 
-| File | Vai trò |
-|---|---|
-| `metrics.py` | `compute_metrics()` accuracy/macro-F1/confusion; `majority_class_index*()` baseline đa số; `acceptance_gate()` chốt PASS/FAIL so với baseline |
-| `report.py` | `report_run()`: frozen-test trên split, ghi metrics.json + confusion CSV + learning curves PNG (`save_curves`) |
+| File | Purpose |
+| --- | --- |
+| `metrics.py` | `compute_metrics()` (accuracy / macro-F1 / confusion matrix); majority-class baselines; `acceptance_gate()` → PASS/FAIL against baseline |
+| `report.py` | `report_run()` — frozen test on the held-out split, writes `metrics_eval.json`, confusion CSV, learning-curve PNGs |
 
-## Quy ước xuyên suốt
+## `nlp/` — the understanding core (L1–L5 + report)
 
-1. **Deterministic / seeded**: cùng input ⇒ cùng output (seed 42 mọi nơi).
-2. **Một seam duy nhất** cho CLI/test: `nlp.report.understand()`.
-3. **Understanding-first**: L1–L3 là sản phẩm chính; router phụ trợ.
-4. **Không OCR, không LLM/API cloud** khi chạy; model seq2seq nhỏ (<7B) chạy local offline được phép (07-summary).
-5. Mọi hyperparameter sống trong `configs/`, không hardcode trong code.
+| File | Layer | What it does |
+| --- | --- | --- |
+| `structure.py` | L1 | `analyze_structure()` — split paragraphs → sentences (`_split_sentences`) → words; returns stats + paragraph list |
+| `keywords.py` | L2 | `extract_keywords()` — in-document TF-IDF over uni+bigram; filters bilingual stopwords (`stopwords.txt`) and pure numbers |
+| `topics.py` | L3 | `extract_topics()` — LDA (seed 42), k chosen by **UMass coherence** over k=3…10; `_cluster_representatives()` — PCA + K-Means to pick readable topic labels from keyphrases |
+| `fields.py` | L4 | `extract_fields(text, doc_type)` — regex schemas per class (invoice #, ISO dates, totals, parties…); per-class overrides in `configs/fields.yaml`; `_normalize()` value normalization |
+| `summary.py` | L5 | `summarize_extractive()` — sentence scoring with L2 keyphrase priors + MMR (λ configurable, deterministic); `summarize_abstractive()` — beam-search generation from a local <7B checkpoint in `models/artifacts/` (`finetuned_checkpoint` preferred, else `checkpoint`); model load `lru_cache`d; missing model/deps → falls back to extractive. Config: `configs/summary.yaml` |
+| `report.py` | seam | **the only entry point**: `understand(text)` / `understand_file(path)` → record `{source, doc_type, structure, keywords, topics, fields, summary, timing}`; `render_markdown(record)`; `_router_text()` (loads SVM artifacts) and `_router_image()` (loads the keras CNN) |
+
+Routing contract: the router is **advisory**. If an artifact is missing the label is
+`"unavailable"` and L1–L5 still run — the pipeline never hard-fails on a missing model.
+
+## Conventions (whole tree)
+
+1. **Deterministic / seeded** — same input ⇒ same output (seed 42 everywhere).
+2. **One seam** — CLI, UI and tests all go through `nlp.report.understand()`.
+3. **Understanding-first** — L1–L3 are the product; the router is a label.
+4. **No OCR, no cloud LLM** — a local <7B seq2seq model is the only generative component.
+5. **Config, not constants** — hyperparameters live in `configs/`, not in code.

@@ -1,37 +1,31 @@
-﻿# RCN — Narrow AI Document Understanding
+﻿# RCN — Understand documents on your machine
 
-Offline document understanding without OCR. A CLI application that ingests text, files, and folders and produces a layered understanding record — structure, keywords, topics, fields, and summary — entirely on-device.
+**RCN** is an offline document-understanding toolkit for Vietnamese and English text. Point it at a
+text, a file, or a folder and it returns a layered understanding record — structure, keywords,
+topics, fields, and summary. No OCR, no cloud, no external LLM: everything runs locally and is
+deterministic (seeded) for the same input.
 
-Documents are routed by type: TF-IDF + SVM for text and a small CNN for images/scans. Scanned pages are classified only and never OCR'd. Summarization is extraction-first (MMR over L1+L2) with an optional small local seq2seq model (<7B) and automatic fallback to extractive. All outputs are deterministic and seeded.
+Scanned pages and photos are **classified only** (which kind of document they are) and are never
+read. Summarization is extraction-first, with an optional small local seq2seq model for
+paraphrased summaries and automatic fallback when the model is absent.
 
----
+## Why RCN?
 
-## Quick links
+- **Layered understanding, not just labels.** Every document becomes a structured record with
+  five levels: `structure` (L1) → `keywords` (L2) → `topics` (L3) → `fields` (L4) → `summary` (L5).
+- **Offline and private.** All processing happens on your machine. The seq2seq summarizer is a
+  sub-7B model run locally via `transformers`; scanned pages never leave your disk.
+- **No OCR.** Text-layer PDFs and office documents are parsed directly; scanned pages are
+  rendered and *classified* by document type (receipt, invoice, letter, …) — not transcribed.
+- **Honest about missing pieces.** If a model artifact is absent, the router says `unavailable`
+  and the rest of the pipeline still completes instead of failing or guessing.
+- **Deterministic.** Every random step is seeded (42); same input → same output.
+- **Two surfaces, one seam.** The Streamlit app ("RCN Studio") and the CLI share a single
+  `understand()` entry point, so the UI and the terminal never disagree.
 
-- [Architecture](./ARCHITECTURE.md) — system overview and pipeline
-- [In-repo Code Map](./src/ARCHITECTURE.md) — per-module implementation details
-- [Contributing](./CONTRIBUTING.md) — how to work in this repo
+## Quickstart
 
----
-
-## Tech stack
-
-| Layer | Technology |
-| --- | --- |
-| Language | Python 3.11 |
-| Text classification | scikit-learn TF-IDF + LinearSVC / RandomForest + GridSearchCV (5-fold, f1_macro) |
-| Image classification | TensorFlow 2.21 — Architecture A: Conv2D(32,5)->MaxPool->Conv2D(64,5)->MaxPool->Dense(256)->Dropout(0.5)->Softmax |
-| NLP | In-document TF-IDF (uni+bigram, bilingual stopwords), LDA (sklearn, seed 42, UMass coherence), regex schemas per class |
-| Summarization | Extraction (MMR, λ=0.7) + Abstractive mT5/vit5-base (<7B) via `transformers` + `Seq2SeqTrainer` |
-| Document I/O | PyMuPDF, pypdf, pdfplumber, python-docx, BeautifulSoup4, html2text |
-| App | Streamlit 1.62 — `scripts/app.py` (RCN Studio) |
-| Tests / Lint | pytest 9.1.1, ruff 0.16.4 |
-
----
-
-## Getting started
-
-Create the environment and install pinned dependencies:
+Requires Python 3.11. Create a virtual environment and install pinned dependencies:
 
 ```bash
 python -m venv .venv
@@ -43,133 +37,191 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Download the summarization checkpoint once (mT5 XLSum multilingual, <7B):
+Optional — download the multilingual seq2seq summarizer (needed only for abstractive mode):
 
 ```bash
 python scripts/download_summarizer.py
 ```
 
-Run the understanding pipeline from the CLI:
+Run the pipeline on one document:
 
 ```bash
-# single text
-python scripts/understand_text.py --text "Your document text here"
+python scripts/understand_text.py datasets/text/invoice/invoice_0000.txt
+```
 
-# single file (pdf-text, docx, md, html, png/jpg)
-python scripts/understand_text.py --file datasets/text/invoice/invoice_0001.txt
+…on a whole folder (batch, recursive; writes `*.understanding.json` + `*.understanding.md`
+next to each input, or into `--out`):
 
-# folder (batch)
-python scripts/understand_text.py --folder datasets/text --out runs/demo
+```bash
+python scripts/understand_text.py datasets/text --out runs/demo
+```
 
-# demo fixture (no input required)
+…or start the web app:
+
+```bash
+.venv/Scripts/python -m streamlit run scripts/app.py   # http://localhost:8501
+```
+
+`--demo` prints structure statistics for a built-in sample string — useful as a smoke test with
+no I/O:
+
+```bash
 python scripts/understand_text.py --demo
 ```
 
-Run the web UI (Streamlit):
+Run the test suite (177 functional tests need no model artifacts; the 12 model-dependent tests
+run on demand):
 
 ```bash
-.venv/Scripts/python -m streamlit run scripts/app.py
+python -m pytest -q            # functional: L1–L5, IO, dataset, UI logic (~1 min)
+python -m pytest -q -m model   # requires real SVM / keras / summarizer artifacts
 ```
 
-| Surface | URL | Notes |
-| --- | --- | --- |
-| RCN Studio | `http://localhost:8501` | Streamlit app in `scripts/app.py`. Batch mode auto-scans `datasets/text`. |
-| CLI JSON | `stdout` + `*.understanding.json` | Same `understand()` seam as the UI. |
-| CLI Markdown | `*.understanding.md` | Rendered via `docproc.nlp.report.render_markdown`. |
+## What you get
 
-Run tests and lint:
+The single seam returns one JSON record per document:
 
-```bash
-python -m pytest -q
-python -m ruff check src scripts
+```text
+{
+  "source": "datasets/text/invoice/invoice_0001.txt",
+  "doc_type": "invoice",                    # router label ("unavailable" if no model)
+  "structure": {…},                          # L1: paragraphs, sentences, words, stats
+  "keywords": […],                           # L2: top-k TF-IDF keyphrases (uni + bigram)
+  "topics": […],                             # L3: LDA topics, k chosen by UMass coherence
+  "fields": {…},                             # L4: invoice number, dates (ISO), amounts …
+  "summary": {…},                            # L5: extractive (MMR) or abstractive (seq2seq)
+  "timing": {…}
+}
 ```
 
-Fine-tune the summarizer (single script works on CPU or GPU/Colab):
+A human-readable Markdown report is rendered from the same record via
+`docproc.nlp.report.render_markdown`.
+
+## How it works
+
+```
+input (text / pdf / docx / md / html / png / jpg)
+   │
+   ├─ io.detect          file type via magic bytes + scanned-PDF probe
+   ├─ text branch  → parsers extract text deterministically (no OCR)
+   ├─ image branch → render page / image → classify document type only
+   │
+   └─ nlp layers → L1 structure → L2 keywords → L3 topics → L4 fields → L5 summary
+```
+
+Six document classes are supported: `article`, `form`, `invoice`, `letter`, `receipt`, `report`.
+
+- **Text router** — TF-IDF (uni+bigram, bilingual stopwords) → LinearSVC / RandomForest
+  (GridSearchCV, 5-fold, `f1_macro`).
+- **Image router** — small CNN ("Architecture A": Conv2D → MaxPool → Conv2D → MaxPool →
+  Dense → Softmax), 64×64 input. Used for scanned PDF pages, PNG and JPG.
+- **Summarizer** — extractive MMR scoring of sentences with keyphrase priors (λ=0.7), plus an
+  optional abstractive engine (fine-tuned ViT5 or multilingual mT5, <7B) with automatic
+  fallback to extractive.
+
+Configuration lives in `configs/*.yaml` — no hardcoded hyperparameters.
+`configs/summary.yaml` sets the default mode, the sentence count and the abstractive checkpoint.
+
+Deeper write-ups: [Architecture](ARCHITECTURE.md) (system overview, training, honest status) and
+[src/ARCHITECTURE.md](src/ARCHITECTURE.md) (per-module code map).
+
+## Quality & benchmarks
+
+**Software.** The functional suite is deterministic and golden-tested: 177 tests cover IO
+parsing against `.expected.txt` fixtures, pixel-exact image preprocessing against frozen `.npy`
+arrays, L1–L5 NLP behavior, dataset split/leak checks and UI logic (Streamlit `AppTest`); 12
+model-dependent tests are opt-in via `-m model`. See [tests/system.md](tests/system.md).
+
+**Router accuracy** (held-out splits, acceptance gate: margin ≥ 0.1 over majority baseline and
+macro-F1 ≥ 0.5):
+
+| Router | Test set | Accuracy | Macro-F1 | Majority baseline | Run |
+| --- | --- | --- | --- | --- | --- |
+| Text (TF-IDF + SVM) | 54 documents | **1.00** | **1.00** | 0.17 / 0.05 | `runs/E0b` |
+| Image (CNN, 64×64) | 105 page images | **0.57** | **0.51** | 0.29 / 0.07 | `runs/E1` |
+
+The text classes are well-separated in TF-IDF space, which explains the near-perfect score; the
+image CNN is a modest but real improvement over the majority baseline — a deliberate, honest
+boundary for a course project on scanned-document *routing without OCR*.
+
+**Summarizer benchmark** — 12 Vietnamese news articles with human reference summaries (eval set
+bundled in `benchmarks/data/`), generated with the exact demo config (beam 4, max 128 tokens,
+CPU). 5 of the 12 docs are excluded from the official table because they overlap the training set
+of the community `vit5-base-vietnews` checkpoint (that model scores R2 = 1.0000 on them — it has
+memorized them); ROUGE-2 is reported on the 7 clean docs:
+
+| Model | Kind | ROUGE-2 | Copy 5-gram | #-halluc. |
+| --- | --- | --- | --- | --- |
+| `vit5_soup_0.7_v1` | weight soup (experimental) | 0.289 | 52% | 0% |
+| `vit5_soup_0.7_v2` | weight soup (experimental) | 0.266 | 46% | 0% |
+| **`vit5_v1`** ⭐ | fine-tuned from VietAI/vit5-base | 0.255 | **44%** | **0%** |
+| `vit5_soup_0.5_v1` | soup v1 ⊕ VietNews @0.5 | 0.231 | 48% | 0% |
+| `summarizer_mt5` | mT5 XLSum multilingual (zero-shot) | 0.211 | 39% | 0% |
+| `vit5_base_vietnews` | community checkpoint (HF) | 0.135 | 48% | 0% |
+| `vit5_base_original` | VietAI/vit5-base (untrained) | 0.089 | 12% | **25%** |
+
+Reading the table: fine-tuning matters — the untrained base scores 0.089 and invents numbers in
+25% of its summaries, while every trained model stays at 0% number hallucination. The top group
+(soup 0.7 v1/v2, `vit5_v1`) is statistically indistinguishable (paired Wilcoxon p > 0.26).
+**Recommended demo checkpoint: `vit5_v1`** — comparable ROUGE-2, the lowest verbatim-copy rate
+in the top group (real paraphrase, not extraction), zero number hallucination and ~9 s/doc on
+CPU. Set it in `configs/summary.yaml`:
+
+```yaml
+abstractive:
+  finetuned_checkpoint: vit5_v1   # was vit5_soup_0.5_v1
+```
+
+Methodology, the full per-doc data and the one-command reproducer:
+[benchmarks/RESULTS.md](benchmarks/RESULTS.md).
+
+## Training the summarizer
+
+`scripts/train_summarizer.py` fine-tunes a ViT5/mT5 checkpoint on any `{text, summary}` JSONL
+and runs on CPU or GPU (same script, Colab-friendly):
 
 ```bash
 python scripts/train_summarizer.py \
-  --train rcn-aux/datasets/summary/xlsum_vietnamese_train.jsonl \
-  --val   rcn-aux/datasets/summary/xlsum_vietnamese_val.jsonl \
+  --train rcn-aux/datasets/summary/xlsum_auto_train.jsonl \
+  --val   rcn-aux/datasets/summary/xlsum_auto_val.jsonl \
   --epochs 2 --batch-size 8 --base-model VietAI/vit5-base
 ```
 
-| Input | Handling |
-| --- | --- |
-| PDF (text layer) | Deterministic text extraction (text branch) |
-| PDF (scanned) | Render page → image branch (classify only, **no OCR**) |
-| DOCX / Markdown / HTML | Parse → extract text |
-| PNG / JPG | Image branch directly |
+The Vietnamese corpora and the Colab recipes that produced the shipped checkpoints (`vit5_v1`,
+`vit5_v2`, the weight-soup family) live in the sibling workspace `rcn-aux/` (not versioned).
+Weight soup = element-wise interpolation between two fine-tuned checkpoints,
+`θ = (1−α)·θ₁ + α·θ₂`, e.g. `vit5_soup_0.5_v1` = v1 ⊕ VietNews at α = 0.5.
 
-| Output | Format |
-| --- | --- |
-| Structured record | JSON (`doc_type`, `structure`, `keywords`, `topics`, `fields`, `summary`) |
-| Report | Markdown |
-| Summary | Terminal / UI |
+## Repository layout
 
----
-
-## Quality & benchmarking
-
-**Pipeline tests** (deterministic, không cần model):
-```bash
-python -m pytest -q            # 177 bài functional (L1–L5, io, dataset, UI logic)
-python -m pytest -q -m model   # 12 bài cần artifact thật (SVM, CNN keras, checkpoint tóm tắt)
-```
-
-**Model benchmark** (tóm tắt sinh abstractive — 12 bài báo tiếng Việt, reference sapo người,
-config demo thật: beam 4, max 128 token, CPU; ROUGE-2 trên 7 bài sạch — đã loại 5 bài trùng tập
-train của model VietNews):
-
-| Model | Loại | ROUGE-2 | Copy 5-gram | Số ảo |
-|---|---|---|---|---|
-| vit5_soup_0.7_v1 | soup thí nghiệm | 0.289 | 52% | 0% |
-| vit5_soup_0.7_v2 | soup thí nghiệm | 0.266 | 46% | 0% |
-| **vit5_v1** | fine-tune tự train (127k VI) | 0.255 | 44% | 0% |
-| vit5_soup_0.5_v1 | soup (v1 ⊕ VietNews @0.5) | 0.231 | 48% | 0% |
-| summarizer_mt5 | mT5 (EN+VI, chưa fine-tune) | 0.211 | 39% | 0% |
-| vit5_base_original | VietAI gốc (chưa train) | 0.089 | 12% | 25% |
-
-Nhóm đầu (soup 0.7_v1/v2, vit5_v1) không khác nhau có ý nghĩa thống kê (Wilcoxon p>0.26).
-Khuyến nghị demo: **vit5_v1** — hồ sơ train đầy đủ, tóm tắt sinh thật (copy 44% — thấp nhất nhóm
-đầu), 0% số ảo, ~9s/bài CPU. `vit5_soup_0.7_v1` điểm cao hơn chút nhưng là blend thí nghiệm
-không có hồ sơ công thức. Kể chuyện model soup dùng `vit5_soup_0.5_v1` (công thức: v1 ⊕ VietNews @0.5).
-
-Chi tiết phương pháp, dữ liệu đánh giá (12 bài đóng gói trong repo), kết quả đầy đủ + cách tái
-chạy: **`benchmarks/RESULTS.md`**.
-
----
-
-## Repository structure
-
-```
-AGENTS.md                   Agent context — read first
+```text
 README.md                   This file
-ARCHITECTURE.md             System overview and pipeline (this repo)
-src/ARCHITECTURE.md         Per-module implementation map
-configs/                    All hyperparameters + fields.yaml (schema overrides)
-  dataset.yaml              Classes + split 70/15/15
-  text.yaml                 TF-IDF + SVM/RF GridSearch
-  cnn.yaml                  Architecture A (64×64) + finetune (224×224)
-  finetune.yaml             MobileNetV2 phases (FUTURE)
-  pipeline.yaml             classification.confidence_threshold
-  summary.yaml              Summary mode + abstractive checkpoint
-  fields.yaml               L4 regex schema overrides per class
-src/docproc/                Core — see src/ARCHITECTURE.md
-  paths.py                  Single source of truth for layout + config loading
-  io/                       detect (magic bytes + scan probe) · parsers · render
-  preprocess/               image (64×64 / 224×224 bicubic) · text (TF-IDF wrapper)
-  models/                   cnn.py (Architecture A) · text_classifier.py (SVM/RF)
-  training/                 data.py (2-arm registry) · harness.py (seeded fit)
-  evaluation/               metrics.py · report.py (shared across experiments)
-  nlp/                      structure (L1) · keywords (L2) · topics (L3 LDA+UMass)
-                            fields (L4) · summary (L5 extractive+abstractive) · report (seam)
-docs/design/                01-knowledge-audit → 06-project-specification + 07-summary
-datasets/                   raw/ text/ splits/ (gitignored, see PROVENANCE.csv)
-models/artifacts/           Trained artifacts (gitignored): text_vectorizer.joblib,
-                            text_model_svm.joblib, summarizer_mt5/, vit5_v1/
-runs/                       Per-experiment logs + metrics (gitignored): E1/, E0b/, E-U0/ ...
-scripts/                    CLI + tooling: understand_text.py, app.py, train_summarizer.py
-benchmarks/                 Eval set (12 bài VI) + run_benchmark.py + results versioned — RESULTS.md
-requirements.txt            Pinned versions verified in .venv
+ARCHITECTURE.md             System overview, training, honest status
+src/ARCHITECTURE.md         Per-module code map (deep reference)
+benchmarks/                 Summarizer benchmark: eval set, runner, versioned results
+configs/                    YAML configs (dataset, text, cnn, pipeline, summary, fields)
+src/docproc/                Core package — see src/ARCHITECTURE.md
+  io/                       detect · parsers (pdf/docx/md/html) · render (scans)
+  preprocess/               image tensors (64×64) · text TF-IDF vectorizer
+  models/                   cnn.py (image router) · text_classifier.py (SVM/RF)
+  training/                 dataset registry · seeded training harness
+  evaluation/               metrics · acceptance gate · run reports
+  nlp/                      structure · keywords · topics · fields · summary · report seam
+scripts/                    understand_text.py (CLI) · app.py (RCN Studio) · train_summarizer.py
+datasets/                   raw images (~700) + text corpus (360 EN docs) + splits (gitignored;
+                            provenance: datasets/text/PROVENANCE_TEXT.csv)
+models/artifacts/           Trained artifacts (gitignored): joblib vectorizer/SVM, keras CNN,
+                            summarizer checkpoints (vit5_v1, soups, mT5, community baselines)
+runs/                       Per-experiment metrics (E0b, E1, E-U0/U2 …)
+tests/                      pytest suite — map in tests/system.md
+requirements.txt            Pinned dependencies (verified in .venv)
 ```
 
+## Reference
+
+| Doc | What it answers |
+| --- | --- |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | How the pipeline fits together; training history; what is and isn't shipped |
+| [src/ARCHITECTURE.md](src/ARCHITECTURE.md) | What each module/file in `src/docproc/` does |
+| [tests/system.md](tests/system.md) | Test suite map, roles, conventions |
+| [benchmarks/RESULTS.md](benchmarks/RESULTS.md) | Summarizer evaluation methodology + full results |
