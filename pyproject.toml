@@ -6,11 +6,11 @@ description = "Narrow AI document processing project (no OCR)"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-# Mặc định chạy bài FUNCTIONAL nhanh (không cần model/artifact).
-# Bài model-dependent chạy riêng: pytest -m model
+# Default runs the fast FUNCTIONAL suite (no model/artifact needed).
+# Model-dependent tests run separately: pytest -m model
 addopts = "-m 'not model'"
 markers = [
-    "model: cần model/artifact thật (SVM joblib, keras CNN, checkpoint tóm tắt) — chạy riêng: pytest -m model",
+    "model: needs real model/artifacts (SVM joblib, keras CNN, summarizer checkpoint) — run via pytest -m model",
 ]
 
 [tool.ruff.lint]

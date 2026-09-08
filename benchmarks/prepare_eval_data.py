@@ -2,7 +2,9 @@
 self-contained jsonl that can live INSIDE the repo. Docs 3,4,6,8,10 are flagged clean=false
 because vit5_base_vietnews scores R2=1.0 on them (training-set overlap / contamination).
 """
-import json, pathlib, random
+import json
+import pathlib
+import random
 
 SRC = pathlib.Path("models/artifacts/demo_vi_internal_memo_summaries.jsonl")
 DST = pathlib.Path("benchmarks/data/eval_vi_20260908.jsonl")
@@ -10,13 +12,19 @@ N = 12
 SEED = 42
 CONTAMINATED = {3, 4, 6, 8, 10}
 
+def _parse_row(line):
+    try:
+        return json.loads(line)
+    except (json.JSONDecodeError, ValueError):  # malformed line — skip
+        return None
+
+
 rng = random.Random(SEED)
 rows = []
 with open(SRC, encoding="utf-8", errors="replace") as fh:
     for line in fh:
-        try:
-            r = json.loads(line)
-        except Exception:
+        r = _parse_row(line)
+        if r is None:
             continue
         t, s = (r.get("text") or "").strip(), (r.get("summary") or "").strip()
         tw, sw = len(t.split()), len(s.split())
