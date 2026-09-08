@@ -135,7 +135,7 @@ src/docproc/                Core — see src/ARCHITECTURE.md
 docs/design/                01-knowledge-audit → 06-project-specification + 07-summary
 datasets/                   raw/ text/ splits/ (gitignored, see PROVENANCE.csv)
 models/artifacts/           Trained artifacts (gitignored): text_vectorizer.joblib,
-                            text_model_svm.joblib, summarizer_mt5/, vit5_finetuned/
+                            text_model_svm.joblib, summarizer_mt5/, vit5_v1/
 runs/                       Per-experiment logs + metrics (gitignored): E1/, E0b/, E-U0/ ...
 scripts/                    CLI + tooling: understand_text.py, app.py, train_summarizer.py
 requirements.txt            Pinned versions verified in .venv

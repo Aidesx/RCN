@@ -720,7 +720,7 @@ ALGOS = [
      "docproc.nlp.summary"),
     ("Seq2Seq T5", "t5", "Tóm tắt sinh",
      "Transformer vit5-base fine-tune trên XLSum-VI (offline).",
-     "vit5_finetuned"),
+     "vit5_v1"),
 ]
 
 

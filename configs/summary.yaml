@@ -7,7 +7,7 @@ extractive:
   position_bonus: 0.1   # bonus added to paragraph-initial sentences
 abstractive:
   checkpoint: csebuetnlp/mT5_multilingual_XLSum   # <7B, covers VI+EN
-  finetuned_checkpoint: vit5_soup_a0.5   # trộn weights: vit5_finetuned + VietNews (model soup)
+  finetuned_checkpoint: vit5_soup_0.5_v1   # soup: vit5_v1 + VietNews @0.5
   max_new_tokens: 128
   no_repeat_ngram_size: 3
   min_new_tokens: 8
