@@ -54,10 +54,21 @@ tests/
 
 ```bash
 # Từ thư mục gốc RCN/
-python -m pytest -q              # toàn bộ ~186 test
+python -m pytest -q              # mặc định: 177 bài FUNCTIONAL (không cần model/artifact)
+python -m pytest -q -m model     # 12 bài MODEL-DEPENDENT (cần SVM/keras/checkpoint tóm tắt)
 python -m pytest tests/io/ -q    # chỉ ingestion
-python -m pytest tests/ui/ -q    # chỉ UI smoke/E2E
 ```
+
+## Phân vai (2026-09-08)
+
+- **Suite mặc định (`pytest -q`) = functional**: L1–L5, io, dataset, text classifier logic,
+  UI chrome — deterministic, chạy được khi chưa có model/artifact (pyproject: `addopts = -m "not model"`).
+- **`pytest -m model` = model-dependent**: cần artifact thật —
+  `tests/ui/*` (luồng UI chạy core THẬT: SVM + abstractive checkpoint),
+  `tests/training/test_harness.py` (train CNN keras), `TestRouterGate` 4 bài dùng SVM thật,
+  `test_abstractive_smoke_when_checkpoint_present`, `test_e1_report_matches_recorded_metrics`.
+- Chất lượng model KHÔNG đo bằng unit test → benchmark riêng (ROUGE/copy/num-hall trên 12 bài báo VI,
+  kết quả lưu ngoài repo, README mục Quality & benchmarking).
 
 ## Quy ước
 

@@ -2,7 +2,10 @@
 import json
 
 import numpy as np
+import pytest
 import yaml
+
+pytestmark = pytest.mark.model  # harness train CNN thật (keras) — chạy riêng: pytest -m model
 
 
 def _tiny_data(n=16):

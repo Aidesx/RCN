@@ -102,6 +102,7 @@ class TestDispatcher:
         with pytest.raises(NotImplementedError):
             mod.summarize(SAMPLE, mode="abstractive", k=1)
 
+    @pytest.mark.model
     def test_abstractive_smoke_when_checkpoint_present(self):
         from pathlib import Path
 

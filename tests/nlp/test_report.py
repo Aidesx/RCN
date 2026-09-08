@@ -90,6 +90,7 @@ class TestRouterGate:
         cues = _rule_cues("TOTAL DUE $10\nINV-999\nPayment terms: net 30")
         assert cues["invoice"] >= 3
 
+    @pytest.mark.model
     def test_low_confidence_unavailable(self, monkeypatch):
         from docproc.nlp import report
 
@@ -98,6 +99,7 @@ class TestRouterGate:
         assert r["doc_type"]["label"] is None
         assert r["doc_type"]["via"] == "low_confidence"
 
+    @pytest.mark.model
     def test_low_confidence_rule_fallback(self, monkeypatch):
         from docproc.nlp import report
 
@@ -107,6 +109,7 @@ class TestRouterGate:
         assert r["doc_type"]["label"] == "invoice"
         assert r["doc_type"]["via"] == "rule_cues"
 
+    @pytest.mark.model
     def test_high_confidence_uses_model(self, monkeypatch):
         from docproc.nlp import report
 
@@ -115,6 +118,7 @@ class TestRouterGate:
         assert r["doc_type"]["via"] == "e0b_svm"
         assert r["doc_type"]["confidence"] == 0.95
 
+    @pytest.mark.model
     def test_confidence_key_present(self):
         r = understand(SAMPLE, source="t")
         assert "confidence" in r["doc_type"]

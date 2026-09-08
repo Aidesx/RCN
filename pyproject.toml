@@ -6,6 +6,12 @@ description = "Narrow AI document processing project (no OCR)"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+# Mặc định chạy bài FUNCTIONAL nhanh (không cần model/artifact).
+# Bài model-dependent chạy riêng: pytest -m model
+addopts = "-m 'not model'"
+markers = [
+    "model: cần model/artifact thật (SVM joblib, keras CNN, checkpoint tóm tắt) — chạy riêng: pytest -m model",
+]
 
 [tool.ruff.lint]
 # Broad excepts are intentional across the pipeline: advisory router,

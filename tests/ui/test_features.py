@@ -10,6 +10,10 @@ from pathlib import Path
 
 from streamlit.testing.v1 import AppTest
 
+import pytest
+
+pytestmark = pytest.mark.model  # luồng UI THẬT cần SVM + checkpoint tóm tắt — chạy riêng: pytest -m model
+
 APP = Path(__file__).resolve().parents[2] / "scripts" / "app.py"
 
 SAMPLE_A = ("INVOICE #INV-10482\n\n"

@@ -66,6 +66,7 @@ class TestConfusionCsv:
 
 
 class TestRealRunReproducible:
+    @pytest.mark.model
     def test_e1_report_matches_recorded_metrics(self, real_test_arrays, tmp_path):
         """Deepened report must reproduce the frozen E1 numbers bit-for-bit."""
         import json

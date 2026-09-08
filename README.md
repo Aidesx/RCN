@@ -108,6 +108,34 @@ python scripts/train_summarizer.py \
 
 ---
 
+## Quality & benchmarking
+
+**Pipeline tests** (deterministic, không cần model):
+```bash
+python -m pytest -q            # 177 bài functional (L1–L5, io, dataset, UI logic)
+python -m pytest -q -m model   # 12 bài cần artifact thật (SVM, CNN keras, checkpoint tóm tắt)
+```
+
+**Model benchmark** (tóm tắt sinh abstractive — 12 bài báo tiếng Việt, reference sapo người,
+config demo thật: beam 4, max 128 token, CPU; ROUGE-2 trên 7 bài sạch — đã loại 5 bài trùng tập
+train của model VietNews):
+
+| Model | Loại | ROUGE-2 | Copy 5-gram | Số ảo |
+|---|---|---|---|---|
+| vit5_soup_0.7_v1 | soup thí nghiệm | 0.289 | 52% | 0% |
+| vit5_soup_0.7_v2 | soup thí nghiệm | 0.266 | 46% | 0% |
+| **vit5_v1** | fine-tune tự train (127k VI) | 0.255 | 44% | 0% |
+| vit5_soup_0.5_v1 | soup (v1 ⊕ VietNews @0.5) | 0.231 | 48% | 0% |
+| summarizer_mt5 | mT5 (EN+VI, chưa fine-tune) | 0.211 | 39% | 0% |
+| vit5_base_original | VietAI gốc (chưa train) | 0.089 | 12% | 25% |
+
+Nhóm đầu (soup 0.7_v1/v2, vit5_v1) không khác nhau có ý nghĩa thống kê (Wilcoxon p>0.26).
+Khuyến nghị demo: **vit5_v1** — hồ sơ train đầy đủ, tóm tắt sinh thật (copy 44% — thấp nhất nhóm
+đầu), 0% số ảo, ~9s/bài CPU. `vit5_soup_0.7_v1` điểm cao hơn chút nhưng là blend thí nghiệm
+không có hồ sơ công thức. Kể chuyện model soup dùng `vit5_soup_0.5_v1` (công thức: v1 ⊕ VietNews @0.5).
+
+---
+
 ## Repository structure
 
 ```
