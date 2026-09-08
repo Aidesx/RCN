@@ -10,6 +10,7 @@ from docproc.models.cnn import build_model
 from docproc.training.data import load_split_arrays, make_datasets
 from docproc.training.harness import run_training
 
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--run-name", default="E1")
@@ -35,12 +36,12 @@ def main() -> int:
 
     model = build_model()
     extra = {
-        "train_samples": int(len(y_train)),
-        "val_samples": int(len(y_val)),
+        "train_samples": len(y_train),
+        "val_samples": len(y_val),
         "fraction": args.fraction,
     }
     print(f"[{args.run_name}] train={len(y_train)} val={len(y_val)} batch={batch_size}")
-    history, metrics = run_training(model, train_ds, val_ds, cfg, args.run_name, extra_config=extra)
+    _, metrics = run_training(model, train_ds, val_ds, cfg, args.run_name, extra_config=extra)
     print(json.dumps(metrics, indent=2))
     return 0
 

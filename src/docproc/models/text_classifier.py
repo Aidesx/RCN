@@ -55,7 +55,7 @@ def _make_estimators(cfg: dict):
         "random_forest": lambda params: RandomForestClassifier(
             random_state=int(cfg["cross_validation"]["seed"]), **params),
     }
-    return [(name, factories[cfg["models"][name]["class"]](dict()),
+    return [(name, factories[cfg["models"][name]["class"]]({}),
              cfg["models"][name]["param_grid"])
             for name in cfg["models"]]
 
@@ -102,7 +102,10 @@ def evaluate_baseline(estimator, vec: TextVectorizer,
                       manifest_path: Path | None = None,
                       text_root: Path | None = None) -> dict:
     from docproc.evaluation.metrics import (
-        acceptance_gate, compute_metrics, majority_class_index_from_counts)
+        acceptance_gate,
+        compute_metrics,
+        majority_class_index_from_counts,
+    )
 
     names = paths.class_names()
     X_test, y_test = load_split_texts("test", manifest_path, text_root)

@@ -93,7 +93,7 @@ def main() -> int:
     if target.is_dir():
         # include extensionless files too — detection content-sniffs them;
         # truly unsupported types surface as transparent [skip] lines below.
-        # bỏ qua đầu ra của chính mình (*.understanding.*) khi quét lại.
+        # skip our own outputs (*.understanding.*) when rescanning.
         files = sorted(f for f in target.rglob("*")
                        if f.is_file()
                        and not f.name.endswith((".understanding.json",

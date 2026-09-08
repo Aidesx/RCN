@@ -76,7 +76,7 @@ class TestSchemaConfig:
     invoice_number:
       patterns: ['REF-(\d+)']
 """, encoding="utf-8")
-        # pattern mới thắng; total_due không khai → giữ built-in
+        # new pattern wins; total_due not declared -> keep the built-in
         out = extract_fields("REF-9991 and also #INV-10482", "invoice",
                              config_path=cfg)
         assert out["fields"]["invoice_number"] == "9991"
@@ -111,7 +111,7 @@ class TestSchemaConfig:
                              config_path=cfg)
         assert out["fields"]["total_due"] == "2008.40"
         assert out["fields"]["date"] == "2021-04-30"
-        # ambiguous 08/09/2021 (cả 2 ≤ 12) → giữ nguyên, không đoán
+        # ambiguous 08/09/2021 (both parts ≤ 12) -> keep as-is, don't guess
         out2 = extract_fields("TOTAL: 5\nDate: 08/09/2021", "invoice",
                               config_path=cfg)
         assert out2["fields"]["date"] == "08/09/2021"
@@ -123,7 +123,7 @@ class TestSchemaConfig:
         assert out["fields"]["invoice_number"] == "INV-10482"
 
     def test_project_config_active(self):
-        # khi project có configs/fields.yaml, invoice dùng override + required
+        # when configs/fields.yaml exists, invoice uses overrides + required
         out = extract_fields(INVOICE, "invoice")
         assert out["missing_required"] == []
         assert out["fields"]["total_due"] == "147.50"

@@ -1,4 +1,3 @@
-import csv
 import sys
 from pathlib import Path
 
@@ -6,8 +5,8 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from docproc import paths  # noqa: E402
-from docproc.preprocess.image import image_to_tensor  # noqa: E402
+from docproc import paths
+from docproc.preprocess.image import image_to_tensor
 
 GOLDEN = paths.TESTS_DIR / "golden"
 GOLDEN.mkdir(parents=True, exist_ok=True)

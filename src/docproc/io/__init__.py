@@ -16,8 +16,18 @@ from docproc.io.parsers import extract_text
 from docproc.io.render import extract_embedded_images_pdf, render_pdf_pages
 
 __all__ = [
-    "DOCX", "HTML", "IMAGE", "MARKDOWN", "PDF_SCANNED", "PDF_TEXT", "UNKNOWN",
-    "Detection", "ParseError", "UnsupportedFormatError",
-    "detect_file_type", "extract_text", "render_pdf_pages",
+    "DOCX",
+    "HTML",
+    "IMAGE",
+    "MARKDOWN",
+    "PDF_SCANNED",
+    "PDF_TEXT",
+    "UNKNOWN",
+    "Detection",
+    "ParseError",
+    "UnsupportedFormatError",
+    "detect_file_type",
     "extract_embedded_images_pdf",
+    "extract_text",
+    "render_pdf_pages",
 ]

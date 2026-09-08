@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from docproc import paths  # noqa: E402
+from docproc import paths
 
 SEED = 42
 GRID = (5, 4)  # cols x rows = 20
@@ -18,7 +18,8 @@ OUT = paths.SPLITS_DIR / "spot_check"
 OUT.mkdir(parents=True, exist_ok=True)
 
 rng = random.Random(SEED)
-rows = list(csv.DictReader(open(paths.SPLITS_DIR / "manifest.csv", encoding="utf-8")))
+with open(paths.SPLITS_DIR / "manifest.csv", encoding="utf-8") as fh:
+    rows = list(csv.DictReader(fh))
 by_class = defaultdict(list)
 for r in rows:
     page = Path(r["page_file"])

@@ -7,7 +7,12 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from docproc.preprocess.image import cnn_tensor, finetune_tensor, image_to_tensor, tensor_from_file
+from docproc.preprocess.image import (
+    cnn_tensor,
+    finetune_tensor,
+    image_to_tensor,
+    tensor_from_file,
+)
 
 GOLDEN = __import__("pathlib").Path(__file__).resolve().parents[1] / "golden"
 FIXTURE = GOLDEN / "fixture_doc_16x13.png"

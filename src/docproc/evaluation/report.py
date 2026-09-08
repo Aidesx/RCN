@@ -36,7 +36,8 @@ def save_curves(history_csv: Path, out_png: Path) -> None:
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    rows = list(csv.DictReader(open(history_csv, encoding="utf-8")))
+    with open(history_csv, encoding="utf-8") as fh:
+        rows = list(csv.DictReader(fh))
     if not rows:
         return  # nothing to plot — avoid IndexError on rows[0]
     epochs = [int(r["epoch"]) for r in rows]
@@ -81,7 +82,7 @@ def report_run(run_dir: Path, predict_fn, split: str = "test", arm: str = "cnn")
 
     out = {
         "run_name": run_dir.name,
-        "test_pages": int(len(y_test)),
+        "test_pages": len(y_test),
         "model_metrics": metrics,
         "majority_baseline": baseline,
         "acceptance_gate_04_8": gate,

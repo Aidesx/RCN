@@ -24,7 +24,7 @@ class TextVectorizer:
         )
         self._fitted = False
 
-    def fit(self, texts: list[str]) -> "TextVectorizer":
+    def fit(self, texts: list[str]) -> TextVectorizer:
         if not texts:
             raise ValueError("cannot fit a vectorizer on an empty corpus")
         self.vectorizer.fit(texts)
@@ -44,5 +44,5 @@ class TextVectorizer:
         dump(self, path)
 
     @staticmethod
-    def load(path) -> "TextVectorizer":
+    def load(path) -> TextVectorizer:
         return load(path)

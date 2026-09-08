@@ -104,7 +104,6 @@ class TestDispatcher:
 
     @pytest.mark.model
     def test_abstractive_smoke_when_checkpoint_present(self):
-        from pathlib import Path
 
         from docproc import paths
 

@@ -10,8 +10,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from docproc import paths
 
 SEED = 42
-rows = list(csv.DictReader(
-    open(paths.DATASETS_DIR / "text" / "PROVENANCE_TEXT.csv", encoding="utf-8")))
+with open(paths.DATASETS_DIR / "text" / "PROVENANCE_TEXT.csv", encoding="utf-8") as fh:
+    rows = list(csv.DictReader(fh))
 assert len(rows) >= 300, len(rows)
 
 rng = random.Random(SEED)
@@ -40,7 +40,8 @@ stats = {s: dict(Counter(r["project_class"] for r in rows if assign[r["doc_id"]]
          for s in ["train", "validation", "test"]}
 stats["total_docs"] = len(rows)
 stats["seed"] = SEED
-json.dump(stats, open(paths.SPLITS_DIR / "text_split_stats.json", "w"), indent=2)
+with open(paths.SPLITS_DIR / "text_split_stats.json", "w", encoding="utf-8") as fh:
+    json.dump(stats, fh, indent=2)
 
 print("docs:", len(rows))
 for s in ["train", "validation", "test"]:

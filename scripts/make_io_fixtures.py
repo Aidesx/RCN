@@ -1,13 +1,12 @@
-import csv
+import sys
 from pathlib import Path
 
 import pymupdf
 from docx import Document
 from PIL import Image, ImageDraw
 
-import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from docproc import paths  # noqa: E402
+from docproc import paths
 
 FIX = paths.TESTS_DIR / "fixtures" / "io"
 FIX.mkdir(parents=True, exist_ok=True)

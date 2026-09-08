@@ -105,11 +105,7 @@ def detect_file_type(path) -> Detection:
             return Detection(DOCX, "zip magic + .docx")
         raise ParseError("zip", p, "zip container that is not .docx is unsupported")
 
-    text_head = ""
-    try:
-        text_head = head.decode("utf-8", errors="replace")
-    except Exception:
-        pass
+    text_head = head.decode("utf-8", errors="replace") if isinstance(head, bytes) else ""
 
     if suffix in _TEXT_SUFFIXES:
         fmt = _TEXT_SUFFIXES[suffix]

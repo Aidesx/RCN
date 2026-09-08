@@ -262,7 +262,7 @@ def render_markdown(record: dict) -> str:
         missing = f.get("missing_required")
         if missing:
             lines.append("")
-            lines.append(f"> ⚠️ thiếu required field: {', '.join(missing)}")
+            lines.append(f"> ⚠️ missing required field: {', '.join(missing)}")
         lines.append("")
     if record.get("note"):
         lines += [f"> {record['note']}", ""]

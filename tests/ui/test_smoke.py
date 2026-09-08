@@ -1,18 +1,17 @@
-"""Smoke test cho RCN Studio (scripts/app.py) qua streamlit.testing.AppTest.
+"""Smoke tests for RCN Studio (scripts/app.py) via streamlit.testing.AppTest.
 
-Kiểm tra:
-  1. Trang chờ render không exception
-  2. Luồng "Dữ liệu mẫu": bấm Phân tích -> đủ tabs + JSON/Markdown tải được
-  3. Luồng dán văn bản THẬT (qua seam understand()): hợp đồng stats/keywords đúng
+Checks:
+  1. The landing page renders without exceptions
+  2. The "sample data" flow: press Analyze -> all tabs render, JSON/Markdown downloadable
+  3. Real pasted-text flow (through the understand() seam): invoice stats/keywords correct
 """
 import sys
 from pathlib import Path
 
+import pytest
 from streamlit.testing.v1 import AppTest
 
-import pytest
-
-pytestmark = pytest.mark.model  # luồng UI THẬT cần SVM + checkpoint tóm tắt — chạy riêng: pytest -m model
+pytestmark = pytest.mark.model  # real UI flow needs SVM + summarizer checkpoint — run: pytest -m model
 
 APP = Path(__file__).resolve().parents[2] / "scripts" / "app.py"
 
@@ -41,29 +40,29 @@ def check(name, cond):
 
 
 def test_smoke():
-    """Smoke: render không crash + demo mode + dán text thật qua seam."""
-    # ---------- 1) trang chờ ----------
+    """Smoke: render without crash + demo mode + real text through the seam."""
+    # ---------- 1) landing page ----------
     at = AppTest.from_file(str(APP), default_timeout=300)
     at.run()
-    check("trang chờ không exception", not at.exception)
+    check("landing renders without exception", not at.exception)
 
-    # ---------- 2) dữ liệu mẫu ----------
-    at.sidebar.radio[0].set_value("🧪 Dữ liệu mẫu (xem thử giao diện)")
+    # ---------- 2) sample data ----------
+    at.sidebar.radio[0].set_value("🧪 Sample data (preview the UI)")
     at.sidebar.button(key="analyze").click()
     at.run()
-    check("demo không exception", not at.exception)
+    check("demo runs without exception", not at.exception)
     rec = state_rec(at)
-    check("demo có record trong state", bool(rec))
+    check("demo stores a record in state", bool(rec))
     check("demo structure.stats.words == 186", (rec or {}).get("structure", {})
           .get("stats", {}).get("words") == 186)
     main_text = "\n".join(str(v.value) for v in at.main.markdown)
-    check("demo hiện badge Hóa đơn", "Hóa đơn" in main_text)
-    check("demo hiện chip từ khóa", "hóa đơn giá trị gia tăng" in main_text)
+    check("demo shows Invoice badge", "Invoice" in main_text)
+    check("demo shows the keyword chip", "hóa đơn giá trị gia tăng" in main_text)
 
-    # ---------- 3) dán văn bản thật qua seam ----------
+    # ---------- 3) real pasted text through the seam ----------
     at2 = AppTest.from_file(str(APP), default_timeout=300)
     at2.run()
-    at2.sidebar.radio[0].set_value("📄 Tài liệu của bạn")
+    at2.sidebar.radio[0].set_value("📄 Your document")
     at2.run()
     ta = at2.sidebar.text_area[0]
     try:
@@ -72,20 +71,20 @@ def test_smoke():
         ta.set_input(SAMPLE)
     at2.sidebar.button(key="analyze").click()
     at2.run()
-    check("seam thật không exception", not at2.exception)
+    check("real seam runs without exception", not at2.exception)
     rec2 = state_rec(at2)
-    check("seam trả record", bool(rec2))
+    check("seam returns a record", bool(rec2))
     dt = (rec2 or {}).get("doc_type", {})
-    check(f"router nhận invoice (thấy: {dt.get('label')})",
+    check(f"router detects invoice (got: {dt.get('label')})",
           dt.get("label") == "invoice")
     stats = ((rec2 or {}).get("structure") or {}).get("stats", {})
-    check("seam stats có words>0", stats.get("words", 0) > 0)
+    check("seam stats has words>0", stats.get("words", 0) > 0)
     kws = rec2.get("keywords", []) if rec2 else []
-    check("keywords là list-dict có term/score/count",
+    check("keywords are dicts with term/score/count",
           bool(kws) and isinstance(kws[0], dict)
           and {"term", "score", "count"} <= set(kws[0]))
     sm = (rec2 or {}).get("summary", {})
-    check("summary extractive có sentences",
+    check("extractive summary has sentences",
           sm.get("engine") == "extractive" and len(sm.get("sentences", [])) >= 1)
 
     assert not fails, f"{len(fails)} failures: {fails}"

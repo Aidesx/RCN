@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 import yaml
 
-pytestmark = pytest.mark.model  # harness train CNN thật (keras) — chạy riêng: pytest -m model
+pytestmark = pytest.mark.model  # harness trains the real CNN (keras) — run: pytest -m model
 
 
 def _tiny_data(n=16):
@@ -29,8 +29,8 @@ def test_run_training_writes_records(tmp_path):
     cfg["training"]["max_epochs"] = 1
 
     model = build_model()
-    history, metrics = run_training(model, train_ds, val_ds, cfg,
-                                    "_test_harness", run_dir=tmp_path)
+    history, _ = run_training(model, train_ds, val_ds, cfg,
+                                "_test_harness", run_dir=tmp_path)
 
     assert (tmp_path / "best.keras").exists()
     assert (tmp_path / "history.csv").exists()
@@ -62,7 +62,6 @@ def test_set_seeds_deterministic_init():
 
 def test_checkpoint_restores_best_weights(tmp_path):
     """Early stopping + checkpoint keep the best-val weights, not the last."""
-    import tensorflow as tf
     from docproc.models.cnn import build_model
     from docproc.training.data import make_datasets
     from docproc.training.harness import set_seeds

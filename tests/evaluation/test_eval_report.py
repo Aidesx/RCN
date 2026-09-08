@@ -1,5 +1,4 @@
 """Tests for the evaluation report module — fake predictors only, no TF."""
-from pathlib import Path
 
 import numpy as np
 import pytest
@@ -16,7 +15,7 @@ def real_test_arrays():
 
 class TestReportRun:
     def test_majority_predictor_writes_artifacts_gate_fails(self, real_test_arrays, tmp_path):
-        X, y = real_test_arrays
+        _, y = real_test_arrays
         names_idx = int(np.bincount(y).argmax())
 
         def predict_fn(Xb):
@@ -30,7 +29,7 @@ class TestReportRun:
         assert gate["margin_over_baseline"] == pytest.approx(0.0, abs=1e-9)
 
     def test_oracle_predictor_passes_gate(self, real_test_arrays, tmp_path):
-        X, y = real_test_arrays
+        _, y = real_test_arrays
 
         def predict_fn(Xb):
             return np.asarray(y)[: len(Xb)]
@@ -42,7 +41,7 @@ class TestReportRun:
         assert gate["pass"] is True
 
     def test_curves_png_written_when_history_exists(self, real_test_arrays, tmp_path):
-        X, y = real_test_arrays
+        _, y = real_test_arrays
         (tmp_path / "history.csv").write_text(
             "epoch,loss,accuracy,val_loss,val_accuracy\n"
             "1,2.0,0.2,1.9,0.25\n2,1.5,0.4,1.6,0.35\n",

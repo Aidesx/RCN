@@ -9,7 +9,6 @@ from docproc.io.detect import (
     MARKDOWN,
     PDF_SCANNED,
     PDF_TEXT,
-    IMAGE,
     ParseError,
     UnsupportedFormatError,
 )

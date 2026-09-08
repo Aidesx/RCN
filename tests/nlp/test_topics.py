@@ -1,17 +1,17 @@
 """L3 topics tests: coherence selection, determinism, fallback, mixtures."""
 import pytest
 
-from docproc.nlp.topics import extract_topics, umass_coherence, n_topics_cap
+from docproc.nlp.topics import extract_topics, n_topics_cap, umass_coherence
 
-CORPUS_DOC = "\n\n".join([
-    "The quarterly report shows steady revenue growth across regions.",
-    "Revenue growth came from logistics and warehouse automation investments.",
-    "Warehouse automation reduced processing latency significantly.",
-    "Marketing launched three campaigns; campaign feedback was positive overall.",
-    "Campaign performance improved brand awareness metrics substantially.",
-    "Finance approved additional budget for automation and marketing programs.",
-    "Budget review highlighted logistics savings and marketing returns.",
-])
+CORPUS_DOC = (
+    "The quarterly report shows steady revenue growth across regions.\n\n"
+    "Revenue growth came from logistics and warehouse automation investments.\n\n"
+    "Warehouse automation reduced processing latency significantly.\n\n"
+    "Marketing launched three campaigns; campaign feedback was positive overall.\n\n"
+    "Campaign performance improved brand awareness metrics substantially.\n\n"
+    "Finance approved additional budget for automation and marketing programs.\n\n"
+    "Budget review highlighted logistics savings and marketing returns."
+)
 
 
 class TestSelection:
@@ -49,11 +49,11 @@ class TestShape:
         assert out["doc_topic_mixture"] == [1.0]
 
     def test_vietnamese_doc_runs(self):
-        vi = ("\n\n".join([
-            "Công ty báo cáo doanh thu tăng trưởng ổn định trong quý.",
-            "Doanh thu đến từ logistics và tự động hóa kho vận hành.",
-            "Tự động hóa giúp giảm thời gian xử lý đơn hàng đáng kể.",
-        ]))
+        vi = (
+            "Công ty báo cáo doanh thu tăng trưởng ổn định trong quý.\n\n"
+            "Doanh thu đến từ logistics và tự động hóa kho vận hành.\n\n"
+            "Tự động hóa giúp giảm thời gian xử lý đơn hàng đáng kể."
+        )
         out = extract_topics(vi, k=2)
         assert out["k"] == 2 and out["topics"]
 
@@ -92,11 +92,11 @@ class TestLabels:
         assert out["topics"][0]["label"] in {"one", "tiny", "line"}
 
     def test_vietnamese_doc_labels(self):
-        vi = ("\n\n".join([
-            "Công ty báo cáo doanh thu tăng trưởng ổn định trong quý.",
-            "Doanh thu đến từ logistics và tự động hóa kho vận hành.",
-            "Tự động hóa giúp giảm thời gian xử lý đơn hàng đáng kể.",
-        ]))
+        vi = (
+            "Công ty báo cáo doanh thu tăng trưởng ổn định trong quý.\n\n"
+            "Doanh thu đến từ logistics và tự động hóa kho vận hành.\n\n"
+            "Tự động hóa giúp giảm thời gian xử lý đơn hàng đáng kể."
+        )
         out = extract_topics(vi, k=2)
         assert all(t["label"] for t in out["topics"])
 

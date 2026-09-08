@@ -1,6 +1,5 @@
 """Stage 8 fast tests: text baseline (E0b) — tiny tmp corpora, no big data."""
 import csv
-import json
 
 import numpy as np
 import pytest
@@ -75,8 +74,7 @@ class TestEstimators:
 class TestEvaluateBaseline:
     def _vecs(self, tmp_path):
         man, text_root = _tiny_corpus(tmp_path)
-        Xtr, ytr = load_split_texts("train", man, text_root)
-        vec = TextVectorizer().fit(Xtr)
+        _, ytr = load_split_texts("train", man, text_root)
         return man, text_root, np.asarray(ytr)
 
     def test_majority_predictor_fails_gate(self, tmp_path):
@@ -96,7 +94,7 @@ class TestEvaluateBaseline:
 
     def test_oracle_passes_gate(self, tmp_path):
         man, text_root, _ = self._vecs(tmp_path)
-        Xte, yte = load_split_texts("test", man, text_root)
+        _, yte = load_split_texts("test", man, text_root)
         truth = np.asarray(yte)
 
         class Oracle:

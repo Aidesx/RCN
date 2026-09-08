@@ -4,9 +4,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from docproc import paths  # noqa: E402
-from docproc.evaluation.report import save_confusion_csv  # noqa: E402
-from docproc.models.text_classifier import evaluate_baseline, train_baseline  # noqa: E402
+from docproc import paths
+from docproc.evaluation.report import save_confusion_csv
+from docproc.models.text_classifier import (
+    evaluate_baseline,
+    train_baseline,
+)
 
 
 def main() -> int:

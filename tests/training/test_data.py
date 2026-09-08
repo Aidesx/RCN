@@ -29,7 +29,7 @@ class TestSplitArrays:
         assert y.min() >= 0 and y.max() <= 5
 
     def test_per_class_counts_match_split_stats(self, train_arrays):
-        X, y = train_arrays
+        _, y = train_arrays
         counts = {i: int((y == i).sum()) for i in range(6)}
         expected = [EXPECTED_TRAIN[c] for c in
                     ["letter", "form", "report", "article", "invoice", "receipt"]]
@@ -53,6 +53,6 @@ class TestMakeDatasets:
         xb, yb = next(iter(train_ds))
         assert tuple(xb.shape) == (4, 64, 64, 3)
         assert int(np.max(yb.numpy())) < 6
-        vx, vy = next(iter(val_ds))
+        vx, _ = next(iter(val_ds))
         assert tuple(vx.shape) == (4, 64, 64, 3)
         assert len(list(val_ds)) == 1

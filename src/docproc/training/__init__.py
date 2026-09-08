@@ -5,7 +5,7 @@ from docproc.training.harness import run_training, set_seeds
 __all__ = [
     "load_split_arrays",
     "make_datasets",
-    "split_class_counts",
     "run_training",
     "set_seeds",
+    "split_class_counts",
 ]

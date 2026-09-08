@@ -22,7 +22,8 @@ CLASSES = CFG["classes"]
 os.makedirs(SPLITS, exist_ok=True)
 rng = random.Random(SEED)
 
-rows = list(csv.DictReader(open(PROV, encoding="utf-8")))
+with open(PROV, encoding="utf-8") as fh:
+    rows = list(csv.DictReader(fh))
 assert len(rows) >= 300, f"need >=300 pages, have {len(rows)}"
 assert rows and "source" in rows[0], (
     "PROVENANCE.csv is stale: missing 'source' column — regenerate it "
@@ -77,7 +78,8 @@ stats["spot_check"] = {
     "target": CFG["requirements"]["label_spot_check_pages"],
     "agreement_target": CFG["requirements"]["label_agreement"],
 }
-json.dump(stats, open(SPLITS / "split_stats.json", "w"), indent=2)
+with open(SPLITS / "split_stats.json", "w", encoding="utf-8") as fh:
+    json.dump(stats, fh, indent=2)
 
 print("pages total:", n_total)
 for split in ["train", "validation", "test"]:

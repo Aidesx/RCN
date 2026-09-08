@@ -1,18 +1,17 @@
-"""Kiểm thử 5 tính năng mới của RCN Studio qua streamlit.testing.AppTest.
+"""Tests for five RCN Studio features via streamlit.testing.AppTest.
 
-Phủ: highlight văn bản gốc · coherence chart · lịch sử phiên · batch mode+CSV
-     (skeleton là hiệu ứng tạm thời trong lúc chạy -> xác minh bằng không-crash).
+Coverage: source-text highlight · coherence chart · session history · batch mode + CSV
+     (the skeleton is a transient loading effect -> verified by not-crashing).
 """
 import shutil
 import sys
 import tempfile
 from pathlib import Path
 
+import pytest
 from streamlit.testing.v1 import AppTest
 
-import pytest
-
-pytestmark = pytest.mark.model  # luồng UI THẬT cần SVM + checkpoint tóm tắt — chạy riêng: pytest -m model
+pytestmark = pytest.mark.model  # real UI flow needs SVM + summarizer checkpoint — run: pytest -m model
 
 APP = Path(__file__).resolve().parents[2] / "scripts" / "app.py"
 
@@ -46,6 +45,13 @@ def state_rec(at):
         return None
 
 
+def state_value(at, key):
+    try:
+        return at.session_state[key]
+    except Exception:
+        return None
+
+
 def set_widget(w, value):
     try:
         w.set_value(value)
@@ -54,46 +60,42 @@ def set_widget(w, value):
 
 
 def test_features():
-    """Kiểm thử: highlight, coherence, lịch sử, batch+CSV."""
-    # ---------- T1: highlight + coherence chart trên dữ liệu mẫu ----------
+    """Coverage: highlight, coherence, history, batch+CSV."""
+    # ---------- T1: highlight + coherence chart on sample data ----------
     at = AppTest.from_file(APP, default_timeout=300)
     at.run()
-    at.sidebar.radio[0].set_value("🧪 Dữ liệu mẫu (xem thử giao diện)")
+    at.sidebar.radio[0].set_value("🧪 Sample data (preview the UI)")
     at.sidebar.button(key="analyze").click()
     at.run()
-    check("T1 demo không exception", not at.exception)
+    check("T1 demo runs without exception", not at.exception)
     main_md = "\n".join(str(v.value) for v in at.main.markdown)
-    check("T1 highlight <mark> xuất hiện", "<mark" in main_md)
-    check("T1 highlight đúng cụm 'hóa đơn giá trị gia tăng'",
+    check("T1 <mark> highlight present", "<mark" in main_md)
+    check("T1 highlights the right phrase 'hóa đơn giá trị gia tăng'",
           "hóa đơn giá trị gia tăng</mark>" in main_md.replace("\n", "")
           or "hóa đơn giá trị gia tăng" in main_md)
     try:
         n_charts = len(at.main.line_chart)
-        check("T1 coherence line_chart render", n_charts >= 1)
+        check("T1 coherence line_chart renders", n_charts >= 1)
     except AttributeError:
-        check("T1 coherence chart không crash (không inspect được)", not at.exception)
+        check("T1 coherence chart does not crash (not inspectable)", not at.exception)
 
-    # ---------- T2: lịch sử phiên (2 lần phân tích + nút Xem) ----------
+    # ---------- T2: session history (2 analyses + View button) ----------
     at2 = AppTest.from_file(APP, default_timeout=300)
     at2.run()
-    at2.sidebar.radio[0].set_value("📄 Tài liệu của bạn")
+    at2.sidebar.radio[0].set_value("📄 Your document")
     at2.run()
     set_widget(at2.sidebar.text_area[0], SAMPLE_A)
     at2.sidebar.button(key="analyze").click()
     at2.run()
-    check("T2 lần 1 không exception", not at2.exception)
+    check("T2 first run without exception", not at2.exception)
     set_widget(at2.sidebar.text_area[0], SAMPLE_B)
     at2.sidebar.button(key="analyze").click()
     at2.run()
-    check("T2 lần 2 không exception", not at2.exception)
-    hist = None
-    try:
-        hist = at2.session_state["history"]
-    except Exception:
-        pass
-    check(f"T2 history có 2 mục (thấy: {len(hist) if hist else 0})",
+    check("T2 second run without exception", not at2.exception)
+    hist = state_value(at2, "history")
+    check(f"T2 history holds 2 entries (got: {len(hist) if hist else 0})",
           bool(hist) and len(hist) == 2)
-    check("T2 entry mới nhất là Báo cáo",
+    check("T2 newest entry is the report",
           bool(hist) and hist[0]["label"] == "report")
     btn_old = None
     for b in at2.main.button:
@@ -104,10 +106,10 @@ def test_features():
         btn_old.click()
         at2.run()
         rec_now = state_rec(at2) or {}
-        check("T2 nút Xem khôi phục đúng kết quả cũ",
+        check("T2 View restores the older result",
               (rec_now.get("doc_type") or {}).get("label") == "invoice")
     else:
-        check("T2 tìm thấy nút Xem trong lịch sử", False)
+        check("T2 View button found in history", False)
 
     # ---------- T3: batch mode + CSV ----------
     tmpdir = Path(tempfile.mkdtemp(prefix="rcn_batch_"))
@@ -119,22 +121,18 @@ def test_features():
     try:
         at3 = AppTest.from_file(APP, default_timeout=300)
         at3.run()
-        at3.sidebar.radio[0].set_value("📁 Thư mục (batch)")
+        at3.sidebar.radio[0].set_value("📁 Folder (batch)")
         at3.run()
         set_widget(at3.sidebar.text_input[0], str(tmpdir))
         at3.sidebar.button(key="analyze").click()
         at3.run()
-        check("T3 batch không exception", not at3.exception)
-        rows = None
-        try:
-            rows = at3.session_state["batch_rows"]
-        except Exception:
-            pass
-        check(f"T3 batch quét đủ 3 tệp (thấy: {len(rows) if rows else 0})",
+        check("T3 batch runs without exception", not at3.exception)
+        rows = state_value(at3, "batch_rows")
+        check(f"T3 batch scans all 3 files (got: {len(rows) if rows else 0})",
               bool(rows) and len(rows) == 3)
-        check("T3 không tệp nào lỗi",
-              bool(rows) and all(r["Loại"] != "— lỗi —" for r in rows))
-        check("T3 có nút tải CSV", len(at3.main.download_button) >= 1)
+        check("T3 no file errored",
+              bool(rows) and all(r["Type"] != "— error —" for r in rows))
+        check("T3 has a CSV download button", len(at3.main.download_button) >= 1)
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)
 

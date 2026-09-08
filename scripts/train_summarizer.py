@@ -92,6 +92,7 @@ def build_training_args(out_dir: Path, args):
     gpu_name = ""
     is_16xx = False
     is_low_vram = False
+    is_16xx, is_low_vram = False, False
     if cuda_ok:
         try:
             props = torch.cuda.get_device_properties(0)
@@ -99,7 +100,7 @@ def build_training_args(out_dir: Path, args):
             gpu_name = props.name
             is_16xx = "1660" in gpu_name or "1650" in gpu_name
             is_low_vram = vram_gb < 8
-        except Exception:
+        except Exception:  # noqa: S110  # best-effort: GPU probing is only an auto-tune hint
             pass
 
     # Auto-tune for GTX 16xx / 6GB: no Tensor Cores -> fp16 slower, use fp32

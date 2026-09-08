@@ -55,11 +55,11 @@ class TestArmRegistry:
         assert set(ARMS) == {"cnn", "finetune"}
 
     def test_cnn_arm_shape(self, tmp_manifest):
-        X, y = load_split_arrays("train", arm="cnn", manifest_path=tmp_manifest)
+        X, _ = load_split_arrays("train", arm="cnn", manifest_path=tmp_manifest)
         assert X.shape == (2, 64, 64, 3) and X.dtype == np.float32
 
     def test_finetune_arm_shape(self, tmp_manifest):
-        X, y = load_split_arrays("train", arm="finetune", manifest_path=tmp_manifest)
+        X, _ = load_split_arrays("train", arm="finetune", manifest_path=tmp_manifest)
         assert X.shape == (2, 224, 224, 3)
 
     def test_unknown_arm_raises(self, tmp_manifest):
@@ -83,7 +83,7 @@ class TestMakeDatasets:
         rng = np.random.default_rng(42)
         X = rng.random((10, 64, 64, 3), dtype=np.float32)
         y = rng.integers(0, 6, size=10).astype(np.int64)
-        train_ds, val_ds = make_datasets(X, y, X[:4], y[:4], batch_size=4, seed=42)
+        train_ds, _ = make_datasets(X, y, X[:4], y[:4], batch_size=4, seed=42)
         xb, yb = next(iter(train_ds))
         assert tuple(xb.shape) == (4, 64, 64, 3)
         assert int(np.max(yb.numpy())) < 6

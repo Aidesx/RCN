@@ -10,11 +10,11 @@ from io import StringIO
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
-from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
+from matplotlib.colors import LinearSegmentedColormap
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -22,14 +22,14 @@ sys.path.insert(0, str(ROOT / "src"))
 try:
     import streamlit as st
 except ImportError:
-    print("Thieu streamlit. Cai: .venv/Scripts/pip install streamlit")
+    print("Missing streamlit. Install with: .venv/Scripts/pip install streamlit")
     sys.exit(1)
 
 st.set_page_config(page_title="RCN Studio", page_icon="📄", layout="wide")
 
 # ------------------------------------------------------------------ constants
 # Palette "Blurple": deep-indigo canvas + Blurple/green/magenta.
-# Light = nền #f5f7ff, Dark = canvas #0a0d3a. Display font Space Grotesk.
+# Light = background #f5f7ff, Dark = canvas #0a0d3a. Display font Space Grotesk.
 BRAND = "#5865f2"          # Blurple —
 BRAND_ON = "#ffffff"
 GREEN_CTA = "#35ed7e"      # electric green — high-intent actions
@@ -40,20 +40,20 @@ SURFACE_INDIGO = "#1e2353" # raised indigo panel
 SURFACE_ONYX = "#23272a"   # dark UI surface
 
 CLASS_META = {
-    "invoice": ("Hóa đơn", "🧾", BRAND),           # Blurple
-    "receipt": ("Biên lai", "✅", GREEN_CTA),      # electric green
-    "report": ("Báo cáo", "📊", MAGENTA),          # magenta
-    "letter": ("Thư từ", "✉️", LINK_CYAN),         # link cyan
-    "form": ("Biểu mẫu", "📋", "#a06cd5"),         # violet accent
-    "article": ("Bài viết", "📰", "#7c86c8"),      # muted indigo
+    "invoice": ("Invoice", "🧾", BRAND),           # Blurple
+    "receipt": ("Receipt", "✅", GREEN_CTA),      # electric green
+    "report": ("Report", "📊", MAGENTA),          # magenta
+    "letter": ("Letter", "✉️", LINK_CYAN),         # link cyan
+    "form": ("Form", "📋", "#a06cd5"),         # violet accent
+    "article": ("Article", "📰", "#7c86c8"),      # muted indigo
 }
 ENGINE_BADGE = {
-    "extractive": ("📋 Trích xuất các câu quan trọng nhất", BRAND),
-    "abstractive": ("✍️ Sinh đoạn văn mới bằng model nhỏ", MAGENTA),
+    "extractive": ("📋 Extracts the most important sentences", BRAND),
+    "abstractive": ("✍️ Generates new text with a small local model", MAGENTA),
 }
 SUPPORTED = ["md", "txt", "html", "htm", "docx"]
 DEMO_RECORD = {
-    "source": "(dữ liệu mẫu) hoa_don_mau.txt",
+    "source": "(sample data) hoa_don_mau.txt",
     "file_type": "txt",
     "doc_type": {"label": "invoice", "via": "e0b_svm", "confidence": 0.94},
     "structure": {"stats": {"characters": 1124, "words": 186,
@@ -62,20 +62,20 @@ DEMO_RECORD = {
                   "paragraphs": [
                       {"index": 0, "sentence_count": 2, "word_count": 38,
                        "sentences": [
-                           "Công ty TNHH An Phát xin gửi hóa đơn giá trị gia "
-                           "tăng số HD-2026-0841 ngày 20/08/2026.",
-                           "Hóa đơn áp dụng cho lô hàng giấy photo A4 theo "
-                           "hợp đồng cung ứng văn phòng phẩm."]},
+                           ("Công ty TNHH An Phát xin gửi hóa đơn giá trị gia "
+                            "tăng số HD-2026-0841 ngày 20/08/2026."),
+                           ("Hóa đơn áp dụng cho lô hàng giấy photo A4 theo "
+                            "hợp đồng cung ứng văn phòng phẩm.")]},
                       {"index": 1, "sentence_count": 2, "word_count": 41,
                        "sentences": [
-                           "Tổng giá trị thanh toán sau thuế VAT 8% là "
-                           "45.600.000 đồng.",
-                           "Hạn công nợ 30 ngày kể từ ngày xuất hóa đơn, vui "
-                           "lòng thanh toán đúng hạn."]},
+                           ("Tổng giá trị thanh toán sau thuế VAT 8% là "
+                            "45.600.000 đồng."),
+                           ("Hạn công nợ 30 ngày kể từ ngày xuất hóa đơn, vui "
+                            "lòng thanh toán đúng hạn.")]},
                       {"index": 2, "sentence_count": 1, "word_count": 18,
                        "sentences": [
-                           "Mọi thắc mắc về khoản mục vui lòng liên hệ phòng "
-                           "kế toán trong vòng 7 ngày làm việc."]}]},
+                           ("Mọi thắc mắc về khoản mục vui lòng liên hệ phòng "
+                            "kế toán trong vòng 7 ngày làm việc.")]}]},
     "keywords": [{"term": "hóa đơn giá trị gia tăng", "score": 2.41, "count": 2},
                  {"term": "công ty TNHH An Phát", "score": 2.12, "count": 2},
                  {"term": "công nợ", "score": 1.87, "count": 1},
@@ -116,15 +116,15 @@ DEMO_RECORD = {
     "summary": {
         "engine": "extractive",
         "sentences": [
-            {"text": "Công ty TNHH An Phát xin gửi hóa đơn giá trị gia tăng "
-                     "số HD-2026-0841 ngày 20/08/2026 cho lô hàng giấy photo "
-                     "A4 theo hợp đồng cung ứng văn phòng phẩm.", "paragraph": 1,
+            {"text": ("Công ty TNHH An Phát xin gửi hóa đơn giá trị gia tăng "
+                      "số HD-2026-0841 ngày 20/08/2026 cho lô hàng giấy photo "
+                      "A4 theo hợp đồng cung ứng văn phòng phẩm."), "paragraph": 1,
              "score": 0.83},
-            {"text": "Tổng giá trị thanh toán sau thuế VAT 8% là "
-                     "45.600.000 đồng, hạn công nợ 30 ngày kể từ ngày xuất "
-                     "hóa đơn.", "paragraph": 4, "score": 0.91},
-            {"text": "Mọi thắc mắc về khoản mục vui lòng liên hệ phòng kế "
-                     "toán trong vòng 7 ngày làm việc.", "paragraph": 6,
+            {"text": ("Tổng giá trị thanh toán sau thuế VAT 8% là "
+                      "45.600.000 đồng, hạn công nợ 30 ngày kể từ ngày xuất "
+                      "hóa đơn."), "paragraph": 4, "score": 0.91},
+            {"text": ("Mọi thắc mắc về khoản mục vui lòng liên hệ phòng kế "
+                      "toán trong vòng 7 ngày làm việc."), "paragraph": 6,
              "score": 0.41},
         ],
         "compression": {"original_sentences": 21, "kept": 3},
@@ -139,9 +139,9 @@ DEMO_ABSTRACTIVE_TEXT = (
 
 
 def demo_record(mode, k_sum):
-    """Record mẫu tuân theo lựa chọn trên sidebar (chế độ + số câu),
-    để mọi control đều có tác dụng khi review giao diện."""
-    rec = json.loads(json.dumps(DEMO_RECORD))  # deep copy đơn giản
+    """Sample record following the sidebar choices (mode + sentence count),
+    so every control does something while previewing the UI."""
+    rec = json.loads(json.dumps(DEMO_RECORD))  # simple deep copy
     sm = rec["summary"]
     if mode == "abstractive":
         rec["summary"] = {"engine": "abstractive", "text": DEMO_ABSTRACTIVE_TEXT,
@@ -179,8 +179,6 @@ def inject_css(dark: bool):
           background:{surface}; border-radius:12px 12px 0 0;
           color:{muted} !important; font-weight:600; }}
       .stTabs [aria-selected="true"] {{ color:#ffffff !important; }}"""
-        marquee_colors = ("linear-gradient(90deg,#5865f2,#ec48bd)",
-                          "rgba(255,255,255,.9)")
     else:
         bg_base = "#f5f7ff"
         surface = "#ffffff"
@@ -202,8 +200,6 @@ def inject_css(dark: bool):
           background:#ececfc; border-radius:12px 12px 0 0;
           color:#5a6189 !important; font-weight:600; }}
       .stTabs [aria-selected="true"] {{ color:#5865f2 !important; }}"""
-        marquee_colors = ("linear-gradient(90deg,#5865f2,#ec48bd)",
-                          "rgba(255,255,255,.9)")
     st.markdown(f"""
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
@@ -326,44 +322,44 @@ def inject_css(dark: bool):
 
 # ------------------------------------------------------------------- helpers
 def to_markdown(rec):
-    """Markdown download: dung renderer that cua core khi co, fallback nhe
-    khi chua co core (che do du lieu mau van tai file ve duoc)."""
+    """Markdown download: use the core renderer when available, light fallback
+    when the core is missing (sample-data mode can still download a file)."""
     try:
         from docproc.nlp.report import render_markdown
 
         return render_markdown(rec)
     except Exception:
-        lines = [f"# Báo cáo hiểu tài liệu", "",
-                 f"- Nguồn: `{rec.get('source', '')}`"]
+        lines = ["# Understanding Report", "",
+                 f"- Source: `{rec.get('source', '')}`"]
         dt = rec.get("doc_type") or {}
         if dt.get("label"):
             name, _, _ = label_meta(dt["label"])
             conf = dt.get("confidence")
-            lines.append(f"- Loại tài liệu: **{name}**"
-                         + (f" (độ tin cậy {conf:.0%})" if conf else ""))
+            lines.append(f"- Document type: **{name}**"
+                         + (f" (confidence {conf:.0%})" if conf else ""))
         totals = (rec.get("structure") or {}).get("stats") or {}
         if totals:
-            lines.append(f"- Thống kê: {totals.get('words', 0)} từ · "
-                         f"{totals.get('sentences', 0)} câu · "
-                         f"{totals.get('paragraphs', 0)} đoạn")
+            lines.append(f"- Stats: {totals.get('words', 0)} words · "
+                         f"{totals.get('sentences', 0)} sentences · "
+                         f"{totals.get('paragraphs', 0)} paragraphs")
         kws = rec.get("keywords") or []
         if kws:
             terms = [k["term"] if isinstance(k, dict) else str(k) for k in kws]
-            lines += ["", "## Từ khóa", ", ".join(terms)]
+            lines += ["", "## Keywords", ", ".join(terms)]
         fd = (rec.get("fields") or {}).get("fields") or {}
         if fd:
-            lines += ["", "## Trường dữ liệu", ""]
+            lines += ["", "## Extracted fields", ""]
             lines += [f"- **{k}**: {v}" for k, v in fd.items()]
         sm = rec.get("summary") or {}
         body = sm.get("text") or " ".join(
             s["text"] for s in (sm.get("sentences") or []))
         if body:
-            lines += ["", "## Tóm tắt", "", body]
+            lines += ["", "## Summary", "", body]
         return "\n".join(lines)
 
 
 def label_meta(label):
-    name, icon, color = CLASS_META.get(label, (label or "Không xác định",
+    name, icon, color = CLASS_META.get(label, (label or "Unknown",
                                                "❓", "#888888"))
     return name, icon, color
 
@@ -373,10 +369,10 @@ def type_card(doc_type):
     conf = doc_type.get("confidence")
     via = doc_type.get("via") or ""
     name, icon, color = label_meta(lbl)
-    sub = f"Độ tin cậy {conf:.0%}" if conf is not None else \
-          {"rule_cues": "Xác định theo quy tắc nội dung",
-           "low_confidence": "Độ tin cậy thấp — không đoán mò"}.get(
-              via, "Chưa xác định được loại tài liệu")
+    sub = f"Confidence {conf:.0%}" if conf is not None else \
+          {"rule_cues": "Identified by content rules",
+           "low_confidence": "Low confidence — not guessing"}.get(
+              via, "Document type could not be determined")
     name, sub = html.escape(str(name)), html.escape(str(sub))
     st.markdown(f"""
     <div style='background:{color};color:#fff;border-radius:12px;padding:18px 22px;
@@ -388,7 +384,7 @@ def type_card(doc_type):
 
 
 def kw_cloud(keywords):
-    """keywords: [{'term','score','count'}, ...] đúng hợp đồng của seam."""
+    """keywords: [{'term','score','count'}, ...] per the seam contract."""
     chips = []
     n = max(len(keywords), 1)
     for i, item in enumerate(keywords):
@@ -397,11 +393,11 @@ def kw_cloud(keywords):
         chips.append(f"<span class='rcn-chip' style='font-size:{size}px'>"
                      f"{html.escape(term)}</span>")
     st.markdown("".join(chips), unsafe_allow_html=True)
-    st.caption(f"Top {len(keywords)} cụm từ đặc trưng nhất của tài liệu.")
+    st.caption(f"Top {len(keywords)} most distinctive phrases in this document.")
 
 
 def kw_chart(keywords):
-    """Bar chart ngang: độ nổi bật từng cụm từ khóa (Altair, màu theo theme)."""
+    """Horizontal bar chart: keyword salience (Altair, theme-aware color)."""
     import altair as alt
     import pandas as pd
 
@@ -409,29 +405,28 @@ def kw_chart(keywords):
     for item in keywords:
         if not isinstance(item, dict):
             continue
-        rows.append({"Từ khóa": str(item.get("term", "?")),
-                     "Độ nổi bật": float(item.get("score", 0) or 0),
-                     "Số lần": int(item.get("count", 0) or 0)})
+        rows.append({"Keyword": str(item.get("term", "?")),
+                     "Salience": float(item.get("score", 0) or 0),
+                     "Count": int(item.get("count", 0) or 0)})
     if not rows:
         return
     df = pd.DataFrame(rows)
-    dark = st.session_state.get("dark", True)
     chart = (alt.Chart(df)
              .mark_bar(cornerRadius=6)
              .encode(
-                 x=alt.X("Độ nổi bật:Q", title="Độ nổi bật",
+                 x=alt.X("Salience:Q", title="Salience",
                          scale=alt.Scale(nice=True)),
-                 y=alt.Y("Từ khóa:N", sort="-x", title=None),
-                 tooltip=["Từ khóa", "Độ nổi bật", "Số lần"],
+                 y=alt.Y("Keyword:N", sort="-x", title=None),
+                 tooltip=["Keyword", "Salience", "Count"],
                  color=alt.value(BRAND))
              .properties(height=max(160, 26 * len(df))))
     st.altair_chart(chart, width='stretch')
-    st.caption("Độ nổi bật = tần suất (tf) × độ hiếm theo đoạn (idf) — "
-               "xuất hiện nhiều + tập trung cục bộ thì càng đặc trưng.")
+    st.caption("Salience = term frequency × how locally concentrated the term is "
+               "(in-document TF-IDF) — frequent and locally focused terms rank higher.")
 
 
 def topic_chart(topics, mixture):
-    """Donut chart: tỷ trọng từng nhóm chủ đề trong tài liệu."""
+    """Donut chart: topic share within the document."""
     import altair as alt
     import pandas as pd
 
@@ -440,9 +435,9 @@ def topic_chart(topics, mixture):
         share = mixture[i] if i < len(mixture) else None
         if share is None:
             continue
-        rows.append({"Chủ đề": t.get("label") or f"Chủ đề {t.get('id', i) + 1}",
-                     "Tỷ trọng": round(float(share) * 100, 1),
-                     "Từ tiêu biểu": ", ".join(t.get("top_words", [])[:4])})
+        rows.append({"Topic": t.get("label") or f"Topic {t.get('id', i) + 1}",
+                     "Share": round(float(share) * 100, 1),
+                     "Top words": ", ".join(t.get("top_words", [])[:4])})
     if not rows:
         return
     df = pd.DataFrame(rows)
@@ -451,20 +446,20 @@ def topic_chart(topics, mixture):
     chart = (alt.Chart(df)
              .mark_arc(innerRadius=48, outerRadius=95)
              .encode(
-                 theta=alt.Theta("Tỷ trọng:Q", stack=True),
-                 color=alt.Color("Chủ đề:N", scale=alt.Scale(scheme=scheme),
+                 theta=alt.Theta("Share:Q", stack=True),
+                 color=alt.Color("Topic:N", scale=alt.Scale(scheme=scheme),
                                  legend=None),
-                 tooltip=["Chủ đề", "Tỷ trọng", "Từ tiêu biểu"])
+                 tooltip=["Topic", "Share", "Top words"])
              .properties(height=210))
     st.altair_chart(chart, width='stretch')
-    st.caption("Tỷ trọng = tỷ lệ nội dung tài liệu thuộc về nhóm chủ đề đó.")
+    st.caption("Share = the fraction of the document assigned to that topic.")
 
 
 def topic_bars(topics, mixture):
     for i, t in enumerate(topics):
-        head = t.get("label") or f"Chủ đề {t.get('id', i) + 1}"
+        head = t.get("label") or f"Topic {t.get('id', i) + 1}"
         share = mixture[i] if i < len(mixture) else None
-        pct = int(round((share or 0) * 100))
+        pct = round((share or 0) * 100)
         st.markdown(f"**{html.escape(str(head))}**")
         track = SURFACE_ONYX if st.session_state.get("dark") else "#e3e6f7"
         st.markdown(
@@ -472,14 +467,14 @@ def topic_bars(topics, mixture):
             f"<div style='background:{BRAND};width:{pct}%;height:14px;"
             f"border-radius:8px'></div></div>", unsafe_allow_html=True)
         left, right = st.columns([1, 4])
-        left.caption(f"~{pct}% tài liệu")
+        left.caption(f"~{pct}% of the document")
         right.write(", ".join(t.get("top_words", [])[:8]))
         st.divider()
-    st.caption("Số nhóm chủ đề được chọn tự động sao cho các nhóm tách bạch nhất.")
+    st.caption("The number of topics is chosen automatically for the most separable groups.")
 
 
 # ═══════════════════════════════════════════════════════════════════
-# Biểu đồ thuật toán (matplotlib, dùng chung theme)
+# Algorithm charts (matplotlib, shared theme)
 # ═══════════════════════════════════════════════════════════════════
 
 INK = "#111827"
@@ -512,7 +507,8 @@ def chart_cnn():
     history_path = ROOT / "runs" / "E1" / "history.csv"
     if not history_path.exists():
         return None
-    history = list(csv.DictReader(open(history_path)))
+    with open(history_path, encoding="utf-8") as fh:
+        history = list(csv.DictReader(fh))
     epochs = [int(r["epoch"]) for r in history]
     acc = [float(r["accuracy"]) for r in history]
     val_acc = [float(r["val_accuracy"]) for r in history]
@@ -522,7 +518,7 @@ def chart_cnn():
         ax.plot(epochs, acc, "o-", color=CYAN, linewidth=2, markersize=3, label="Train Accuracy")
         ax.plot(epochs, val_acc, "s-", color=ACCENT, linewidth=2, markersize=3, label="Val Accuracy")
         ax.set_xlabel("Epoch"); ax.set_ylabel("Accuracy")
-        ax.set_title("CNN — Đường cong huấn luyện (Architecture A, 64×64)")
+        ax.set_title("CNN — Training curves (Architecture A, 64×64)")
         ax.legend(loc="lower right"); ax.grid(zorder=0)
         ax.set_ylim(0, 1.05)
         plt.tight_layout()
@@ -534,7 +530,8 @@ def chart_svm_confusion():
     cm_path = ROOT / "runs" / "E1" / "confusion_matrix.csv"
     if not cm_path.exists():
         return None
-    cm = list(csv.DictReader(open(cm_path)))
+    with open(cm_path, encoding="utf-8") as fh:
+        cm = list(csv.DictReader(fh))
     classes = list(cm[0].keys())[1:]
     n = len(classes)
     mat = np.zeros((n, n), dtype=int)
@@ -545,7 +542,7 @@ def chart_svm_confusion():
     with plt.rc_context(_algo_style()):
         fig, ax = plt.subplots(figsize=(6.5, 5))
         cmap = LinearSegmentedColormap.from_list("cyan", ["white", CYAN, ACCENT])
-        im = ax.imshow(mat, cmap=cmap, aspect="auto")
+        ax.imshow(mat, cmap=cmap, aspect="auto")
         for i in range(n):
             for j in range(n):
                 color = "white" if mat[i, j] > mat.max() * 0.5 else \
@@ -563,12 +560,12 @@ def chart_svm_confusion():
 
 
 def chart_tfidf_algo(keywords):
-    """TF-IDF bar chart (từ kết quả phân tích thực tế)."""
+    """TF-IDF bar chart (from real analysis results)."""
     if not keywords:
         return None
     terms = [k["term"] if isinstance(k, dict) else str(k) for k in keywords[:10]]
     scores = [k["score"] if isinstance(k, dict) else 0 for k in keywords[:10]]
-    # Đảo ngược để bar ngang hiển thị từ trên xuống
+    # Reverse so the longest bar is on top
     terms.reverse(); scores.reverse()
 
     with plt.rc_context(_algo_style()):
@@ -578,7 +575,7 @@ def chart_tfidf_algo(keywords):
         for bar, s in zip(ax.patches, scores):
             ax.text(bar.get_width() + max(scores) * 0.01, bar.get_y() + bar.get_height() / 2,
                     f"{s:.3f}", va="center", fontsize=8, color=INK)
-        ax.set_xlabel("TF-IDF Score"); ax.set_title("TF-IDF — Top từ khóa (in-document)")
+        ax.set_xlabel("TF-IDF Score"); ax.set_title("TF-IDF — Top keywords (in-document)")
         ax.grid(axis="x", zorder=0)
         ax.set_xlim(0, max(scores) * 1.2)
         plt.tight_layout()
@@ -586,7 +583,7 @@ def chart_tfidf_algo(keywords):
 
 
 def chart_lda_coherence(topics_data):
-    """UMass Coherence curve (từ kết quả phân tích)."""
+    """UMass Coherence curve (from analysis results)."""
     curve = topics_data.get("coherence_curve") or []
     if len(curve) < 2:
         return None
@@ -604,17 +601,17 @@ def chart_lda_coherence(topics_data):
                     markeredgecolor=INK, linewidth=2, zorder=4)
             ax.annotate(f"k={best_k}", xy=(ks[idx], coh[idx]),
                         xytext=(ks[idx] + 0.5, coh[idx] + 0.3),
-                        arrowprops=dict(arrowstyle="->", color=INK),
+                        arrowprops={"arrowstyle": "->", "color": INK},
                         fontsize=10, fontweight="bold", color=ACCENT)
-        ax.set_xlabel("Số chủ đề (k)"); ax.set_ylabel("UMass Coherence")
-        ax.set_title("LDA — Chọn k tối ưu bằng UMass Coherence")
+        ax.set_xlabel("Number of topics (k)"); ax.set_ylabel("UMass Coherence")
+        ax.set_title("LDA — Choosing k with UMass Coherence")
         ax.set_xticks(ks); ax.grid(zorder=0)
         plt.tight_layout()
     return fig
 
 
 def chart_pca_algo():
-    """PCA Scree plot (từ TF-IDF của 12 câu mẫu)."""
+    """PCA Scree plot (from TF-IDF of 12 sample sentences)."""
     from sklearn.decomposition import PCA
     from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -649,7 +646,7 @@ def chart_pca_algo():
         ax2.set_ylabel("Cumulative %", color=INK)
         ax2.set_ylim(0, 105)
         ax.set_xlabel("Principal Component"); ax.set_ylabel("Variance Explained (%)")
-        ax.set_title("PCA — Phương sai giải thích (Scree Plot)")
+        ax.set_title("PCA — Explained variance (scree plot)")
         ax.set_xticks(x); ax.grid(axis="y", zorder=0)
         ax.text(1, var[0] * 100 + 1, f"{var[0]*100:.1f}%", ha="center", fontsize=9, fontweight="bold", color=ACCENT)
         plt.tight_layout()
@@ -657,10 +654,10 @@ def chart_pca_algo():
 
 
 def chart_kmeans_algo():
-    """K-Means Elbow Method (từ TF-IDF của 12 câu mẫu)."""
+    """K-Means elbow method (from TF-IDF of 12 sample sentences)."""
     from sklearn.cluster import KMeans
-    from sklearn.preprocessing import StandardScaler
     from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.preprocessing import StandardScaler
 
     samples = [
         "Hệ thống RCN phân tích tài liệu tiếng Việt bằng học máy.",
@@ -691,41 +688,41 @@ def chart_kmeans_algo():
                 markerfacecolor=CYAN, markeredgecolor=INK, zorder=3)
         ax.axvline(x=elbow_k, color=ACCENT, linestyle="--", linewidth=2, alpha=0.8,
                    label=f"Elbow: k={elbow_k}")
-        ax.set_xlabel("Số cụm (k)"); ax.set_ylabel("Inertia (WCSS)")
-        ax.set_title("K-Means — Elbow Method chọn số cụm tối ưu")
+        ax.set_xlabel("Number of clusters (k)"); ax.set_ylabel("Inertia (WCSS)")
+        ax.set_title("K-Means — Elbow method for choosing the cluster count")
         ax.set_xticks(list(ks)); ax.legend(); ax.grid(zorder=0)
         plt.tight_layout()
     return fig
 
 
-# Các thuật toán ML/DL được dùng trong từng bước phân tích (hiển thị UI).
+# ML/DL algorithms used at each analysis step (shown in the UI).
 ALGOS = [
-    ("SVM", "e0b_svm", "Phân loại văn bản",
-     "TF-IDF → LinearSVC; GridSearchCV chọn siêu tham số 5-fold.",
+    ("SVM", "e0b_svm", "Text classification",
+     "TF-IDF → LinearSVC; GridSearchCV picks hyperparameters (5-fold).",
      "text_model_svm.joblib"),
-    ("CNN", "e1_cnn", "Phân loại ảnh scan",
-     "Conv2D→MaxPool→Dense(softmax), train trên RVL-CDIP.",
+    ("CNN", "e1_cnn", "Scanned-image classification",
+     "Conv2D→MaxPool→Dense(softmax), trained on the RVL-CDIP subset.",
      "runs/E1/best.keras"),
-    ("TF-IDF", "tfidf", "Độ nổi bật từ khóa",
-     "score = tf × idf (idf theo đoạn) — từ khóa & vector hóa.",
+    ("TF-IDF", "tfidf", "Keyword salience",
+     "score = tf × idf (idf over paragraphs) — keywords & vectorization.",
      "text_vectorizer.joblib"),
-    ("LDA", "lda", "Nhóm chủ đề",
-     "Latent Dirichlet Allocation; k chọn bằng UMass coherence.",
+    ("LDA", "lda", "Topic grouping",
+     "Latent Dirichlet Allocation; k chosen by UMass coherence.",
      "sklearn.decomposition"),
-    ("K-means + PCA", "km_pca", "Nhãn chủ đề",
-     "Gom cụm từ khóa → 1 từ đại diện cho mỗi nhóm chủ đề.",
+    ("K-means + PCA", "km_pca", "Topic labels",
+     "Clusters keywords → one representative label per topic group.",
      "sklearn.cluster"),
-    ("MMR", "mmr", "Tóm tắt trích xuất",
-     "score = λ·relevance − (1−λ)·redundancy; chọn câu không trùng.",
+    ("MMR", "mmr", "Extractive summary",
+     "score = λ·relevance − (1−λ)·redundancy; picks non-duplicate sentences.",
      "docproc.nlp.summary"),
-    ("Seq2Seq T5", "t5", "Tóm tắt sinh",
-     "Transformer vit5-base fine-tune trên XLSum-VI (offline).",
+    ("Seq2Seq T5", "t5", "Abstractive summary",
+     "Transformer vit5-base fine-tuned on Vietnamese corpora (offline).",
      "vit5_v1"),
 ]
 
 
 def algo_panel():
-    """Lưới card thuật toán ML/DL của project (đúng dữ liệu core thật)."""
+    """Grid of the project ML/DL algorithm cards (real core data)."""
     dark = st.session_state.get("dark", True)
     card_bg = SURFACE_INDIGO if dark else "#ffffff"
     border = SURFACE_ONYX if dark else "#d7dbef"
@@ -752,18 +749,18 @@ def algo_panel():
                 unsafe_allow_html=True)
 
 
-def demo_cta(help_text="Chưa có tài liệu? Xem ngay bằng dữ liệu mẫu:",
+def demo_cta(help_text="No document handy? Preview the UI with sample data:",
              cta_key: str | None = None):
-    """Nút CTA dùng chung: bật bản demo không cần core."""
+    """Shared CTA button: switch to the sample-data demo (no core needed)."""
     st.caption(help_text)
     key = cta_key or f"cta_demo_{abs(hash(help_text)) % 100000}"
-    if st.button("🧪 Xem với dữ liệu mẫu", key=key):
+    if st.button("🧪 View with sample data", key=key):
         st.session_state["rec"] = demo_record(None, 3)
         st.rerun()
 
 
 def highlight_text(text: str, keywords: list, dark: bool) -> str:
-    """Bôi nền các keyphrase (uni+bi-gram, không phân biệt hoa/thường)."""
+    """Highlight keyphrases (uni+bi-gram, case-insensitive)."""
     terms = [k["term"] if isinstance(k, dict) else str(k) for k in keywords]
     if not text or not terms:
         return html.escape(text or "")
@@ -791,7 +788,7 @@ def _load_theme() -> bool:
     try:
         return _THEME_FILE.read_text().strip() != "light"
     except Exception:
-        return True   # mặc định dark
+        return True   # dark by default
 
 
 if "dark" not in st.session_state:
@@ -800,25 +797,25 @@ inject_css(st.session_state["dark"])
 
 with st.sidebar:
     st.header("📄 RCN Studio")
-    st.caption("Mọi tài liệu, một cái nhìn rõ ràng — chạy hoàn toàn trên máy.")
+    st.caption("Every document, one clear view — fully on your machine.")
     st.divider()
 
-    dark_new = st.toggle("🌙 Giao diện tối",
+    dark_new = st.toggle("🌙 Dark theme",
                          value=st.session_state["dark"],
                          key="theme_toggle",
-                         help="Đổi sáng/tối (ghi nhớ cả khi khởi động lại)")
+                         help="Switch light/dark (remembered across restarts)")
     if dark_new != st.session_state["dark"]:
         st.session_state["dark"] = dark_new
         try:
             _THEME_FILE.write_text("dark" if dark_new else "light")
-        except Exception:
+        except Exception:  # noqa: S110  # best-effort theme persistence
             pass
         st.rerun()
 
-    src = st.radio("Nguồn dữ liệu",
-                   ["🧪 Dữ liệu mẫu (xem thử giao diện)",
-                    "📄 Tài liệu của bạn",
-                    "📁 Thư mục (batch)"])
+    src = st.radio("Data source",
+                   ["🧪 Sample data (preview the UI)",
+                    "📄 Your document",
+                    "📁 Folder (batch)"])
     use_demo = src.startswith("🧪")
     use_batch = src.startswith("📁")
 
@@ -826,40 +823,40 @@ with st.sidebar:
     folder_path = ""
     if use_batch:
         folder_path = st.text_input(
-            "Thư mục cần quét",
+            "Folder to scan",
             value=str(ROOT / "datasets" / "text"),
-            help="Mọi tệp văn bản trong thư mục (kể cả thư mục con) "
-                 "được quét và gộp thành bảng + CSV.")
+            help="Every text file in the folder (recursively) is scanned "
+                 "into a table + CSV.")
     elif not use_demo:
-        up = st.file_uploader("Kéo-thả tài liệu vào đây", type=SUPPORTED)
-        st.caption("TXT · MD · HTML · DOCX · PDF (kể cả scan) · ảnh")
-        pasted = st.text_area("...hoặc dán văn bản:", height=130,
-                              placeholder="Dán nội dung cần phân tích vào đây")
+        up = st.file_uploader("Drag & drop your document here", type=SUPPORTED)
+        st.caption("TXT · MD · HTML · DOCX · PDF (incl. scanned) · images")
+        pasted = st.text_area("...or paste text:", height=130,
+                              placeholder="Paste the content you want analyzed here")
 
     st.markdown("---")
-    st.markdown("### ⚙️ Tuỳ chọn tóm tắt")
+    st.markdown("### ⚙️ Summary options")
     mode_lbl = st.segmented_control(
-        "Chế độ", ["Tự động", "Trích xuất câu", "Sinh đoạn văn mới"],
-        default="Tự động",
-        help="“Sinh đoạn văn mới” cần model nhỏ cài sẵn trong máy; "
-             "thiếu thì tự quay về trích xuất câu.")
-    MODE_MAP = {"Tự động": None, "Trích xuất câu": "extractive",
-                "Sinh đoạn văn mới": "abstractive"}
-    k_sum = st.slider("Số câu tóm tắt", 1, 7, 3)
+        "Mode", ["Auto", "Extract sentences", "Generate new text"],
+        default="Auto",
+        help="“Generate new text” needs the small local model; if it is missing "
+             "it falls back to sentence extraction.")
+    MODE_MAP = {"Auto": None, "Extract sentences": "extractive",
+                "Generate new text": "abstractive"}
+    k_sum = st.slider("Summary sentences", 1, 7, 3)
 
     can_go = (use_demo
               or use_batch
               or (not use_demo and not use_batch
                   and (up is not None or bool(pasted.strip()))))
-    go = st.button("▶️  Phân tích", type="primary", width="stretch",
+    go = st.button("▶️  Analyze", type="primary", width="stretch",
                    key="analyze", disabled=not can_go,
                    shortcut="Ctrl+Enter",
-                   help="Chưa đủ dữ liệu? Chọn file/dán văn bản/nhập thư mục "
-                        "trước. Ctrl+Enter để chạy nhanh.")
+                   help="Nothing to analyze yet? Pick a file, paste text or enter a "
+                        "folder first. Ctrl+Enter runs it fast.")
 
 
 def skeleton_block(rows: int = 3, width_pct: tuple = (72, 95, 60)):
-    """Skeleton shimmer thay spinner — cảm giác tải nhanh hơn."""
+    """Shimmer skeleton instead of a spinner — feels faster."""
     bars = "".join(
         f"<div style='height:13px;border-radius:7px;margin-bottom:11px;"
         f"width:{width_pct[min(i, len(width_pct) - 1)]}%;"
@@ -876,11 +873,11 @@ def skeleton_block(rows: int = 3, width_pct: tuple = (72, 95, 60)):
 if go:
     if use_demo:
         st.session_state["rec"] = demo_record(MODE_MAP[mode_lbl], k_sum)
-        st.toast("Đang hiển thị dữ liệu mẫu 🧪", icon="🧪")
+        st.toast("Showing sample data 🧪", icon="🧪")
     elif use_batch:
         fdir = Path(folder_path)
         if not fdir.is_dir():
-            st.sidebar.warning("Thư mục không tồn tại — kiểm tra lại đường dẫn.")
+            st.sidebar.warning("Folder does not exist — check the path.")
         files = sorted(p for p in fdir.rglob("*")
                        if p.is_file()
                        and not p.name.endswith((".understanding.json",
@@ -889,12 +886,12 @@ if go:
                        {".txt", ".md", ".markdown", ".html", ".htm",
                         ".docx", ".pdf"})
         if not files:
-            st.sidebar.warning("Không có tệp nào loại hỗ trợ trong thư mục.")
+            st.sidebar.warning("No supported files found in this folder.")
         else:
             from docproc.nlp.report import understand_file
 
             rows, errs = [], 0
-            prog = st.progress(0.0, text="Đang quét thư mục...")
+            prog = st.progress(0.0, text="Scanning folder...")
             for i, fp in enumerate(files):
                 err_txt = ""
                 try:
@@ -906,28 +903,28 @@ if go:
                     doc_lbl = None
                     err_txt = f"{type(exc).__name__}: {exc}"[:90]
                 rows.append({
-                    "Tệp": fp.name,
-                    "Loại": label_meta(doc_lbl)[0] if doc_lbl else "— lỗi —",
-                    "Từ": ((r.get("structure") or {}).get("stats", {})
+                    "File": fp.name,
+                    "Type": label_meta(doc_lbl)[0] if doc_lbl else "— error —",
+                    "Words": ((r.get("structure") or {}).get("stats", {})
                            .get("words", 0)) if doc_lbl else 0,
-                    "Câu": ((r.get("structure") or {}).get("stats", {})
+                    "Sentences": ((r.get("structure") or {}).get("stats", {})
                             .get("sentences", 0)) if doc_lbl else 0,
-                    "Từ khóa": len(r.get("keywords") or []) if doc_lbl else 0,
-                    "Trường khớp": (r.get("fields") or {}).get(
+                    "Keywords": len(r.get("keywords") or []) if doc_lbl else 0,
+                    "Fields": (r.get("fields") or {}).get(
                         "matched", 0) if doc_lbl else 0,
-                    "Ghi chú": err_txt,
+                    "Note": err_txt,
                 })
                 prog.progress((i + 1) / len(files),
                               text=f"{i + 1}/{len(files)}: {fp.name}")
             st.session_state["batch_rows"] = rows
             st.session_state["batch_errs"] = errs
-            st.toast(f"Xong {len(files)} tệp"
-                     + (f" ({errs} lỗi)" if errs else ""), icon="📁")
+            st.toast(f"Done — {len(files)} files"
+                     + (f" ({errs} errors)" if errs else ""), icon="📁")
     elif up is None and not pasted.strip():
-        st.sidebar.warning("Hãy tải tệp hoặc dán văn bản trước.")
+        st.sidebar.warning("Upload a file or paste text first.")
     else:
-        # Skeleton hiện NGAY trước khi seam chạy (abstractive có thể mất 5-25s)
-        st.markdown("**Đang phân tích tài liệu...**")
+        # Show the skeleton IMMEDIATELY before the seam runs (abstractive can take 5-25s)
+        st.markdown("**Analyzing document...**")
         skeleton_block(rows=5)
         c1, c2, c3 = st.columns(3)
         for c in (c1, c2, c3):
@@ -943,8 +940,8 @@ if go:
             from docproc.nlp.report import understand, understand_file
 
             if up is not None:
-                # seam cần đường dẫn thật trên đĩa -> đổ upload ra file tạm
-                # (giữ hậu tố để magic-bytes + extension nhận đúng loại)
+                # the seam needs a real path on disk -> spill the upload to a temp file
+                # (keep the suffix so magic-bytes + extension detect the right kind)
                 suffix = Path(up.name or "upload.bin").suffix or ".bin"
                 with tempfile.NamedTemporaryFile(
                         delete=False, suffix=suffix) as tmp:
@@ -953,40 +950,40 @@ if go:
                 rec = understand_file(tmp_path,
                                       summary_mode=MODE_MAP[mode_lbl],
                                       summary_k=k_sum)
-                rec["source"] = up.name  # tên thật thay đường dẫn tạm
+                rec["source"] = up.name  # real name instead of the temp path
             else:
-                rec = understand(pasted, source="(văn bản dán)",
+                rec = understand(pasted, source="(pasted text)",
                                  summary_mode=MODE_MAP[mode_lbl],
                                  summary_k=k_sum)
             st.session_state["rec"] = rec
-            # Lịch sử phiên: giữ tối đa 8 lần phân tích gần nhất
+            # Session history: keep the 8 most recent analyses
             hist = st.session_state.setdefault("history", [])
             hist.insert(0, {
                 "source": str(rec.get("source", "")),
-                "time": datetime.now().strftime("%H:%M:%S"),
+                "time": datetime.now().astimezone().strftime("%H:%M:%S"),
                 "label": (rec.get("doc_type") or {}).get("label") or "?",
                 "rec": rec,
             })
             del hist[8:]
         except Exception as exc:
             st.session_state.pop("rec", None)
-            st.error("Không xử lý được tài liệu này.")
+            st.error("Could not process this document.")
             st.code(f"{type(exc).__name__}: {exc}", language=None)
-            st.info("💡 Có thể xem giao diện trước bằng **Dữ liệu mẫu** "
-                    "trên thanh bên.")
+            st.info("💡 You can still preview the UI with **Sample data** "
+                    "in the sidebar.")
         finally:
             if tmp_path is not None:
                 tmp_path.unlink(missing_ok=True)
 
 rec = st.session_state.get("rec")
-is_demo = bool(rec) and str(rec.get("source", "")).startswith("(dữ liệu mẫu)")
+is_demo = bool(rec) and str(rec.get("source", "")).startswith("(sample data)")
 
 # ------------------------------------------------------------ batch result --
 batch_rows = st.session_state.get("batch_rows")
 if batch_rows:
-    st.markdown(f"""<div class='rcn-hero'><h1>Kết quả quét thư mục</h1>
-      <p>{len(batch_rows)} tệp · {st.session_state.get('batch_errs', 0)} lỗi
-      — bấm “Phân tích” để quét lại.</p></div>""", unsafe_allow_html=True)
+    st.markdown(f"""<div class='rcn-hero'><h1>Folder scan results</h1>
+      <p>{len(batch_rows)} files · {st.session_state.get('batch_errs', 0)} errors
+      — press “Analyze” to rescan.</p></div>""", unsafe_allow_html=True)
     st.write("")
     buf = StringIO()
     writer = csv.DictWriter(buf, fieldnames=list(batch_rows[0].keys()))
@@ -996,12 +993,12 @@ if batch_rows:
     with ctbl:
         st.dataframe(batch_rows, hide_index=True, width='stretch')
     with ccsv:
-        st.download_button("Tải CSV", buf.getvalue().encode("utf-8-sig"),
+        st.download_button("Download CSV", buf.getvalue().encode("utf-8-sig"),
                            "batch_understanding.csv", "text/csv",
                            width='stretch',
                            type="primary", icon=":material/table:",
-                           help="Bảng kết quả quét thư mục (CSV, Excel-compatible)")
-        if st.button("Xóa kết quả batch", width="stretch",
+                           help="Folder scan results as CSV (Excel-compatible)")
+        if st.button("Clear batch results", width="stretch",
                      type="secondary", icon=":material/delete:"):
             for k in ("batch_rows", "batch_errs"):
                 st.session_state.pop(k, None)
@@ -1011,16 +1008,16 @@ if batch_rows:
 # ------------------------------------------------------------------ result --
 history = st.session_state.get("history") or []
 if history and not is_demo:
-    with st.expander(f"🕘 Lịch sử phiên ({len(history)} lần phân tích)"):
+    with st.expander(f"🕘 Session history ({len(history)} analyses)"):
         for i, h in enumerate(history):
             c1, c2, c3, c4 = st.columns([4, 2, 3, 1])
             c1.write(f"**{html.escape(Path(h['source']).name or h['source'])}**")
             c2.caption(h["time"])
             name_h, _, _ = label_meta(h.get("label"))
             c3.caption(name_h)
-            if c4.button("Xem", key=f"hist_{i}", type="secondary",
+            if c4.button("View", key=f"hist_{i}", type="secondary",
                          icon=":material/visibility:",
-                         help="Mở lại kết quả của lần phân tích này"):
+                         help="Reopen this analysis result"):
                 st.session_state["rec"] = h["rec"]
                 st.session_state.pop("batch_rows", None)
                 st.rerun()
@@ -1036,43 +1033,43 @@ if rec:
             "<div style='background:rgba(236,72,189,.14);border:1px solid "
             "rgba(236,72,189,.45);color:#ec48bd;padding:8px 16px;"
             "border-radius:10px;font-size:13px'>"
-            "🧪 <b>Đang xem dữ liệu mẫu</b> — giao diện dùng bản ghi đóng sẵn, "
-            "chưa gọi bộ máy phân tích.</div>",
+            "🧪 <b>Viewing sample data</b> — the UI shows a prebuilt record, "
+            "no analysis engine was called.</div>",
             unsafe_allow_html=True)
         st.write("")
         hero_sub = ""
     else:
-        hero_sub = ("Mọi số liệu sinh trên chính máy này — cùng bộ máy với "
-                    "dòng lệnh, kết quả JSON/Markdown giống hệt.")
-    st.markdown(f"""<div class='rcn-hero'><h1>Kết quả phân tích</h1>
-      <p><b>Mọi tài liệu, một cái nhìn rõ ràng.</b>{' ' + hero_sub if hero_sub else ''}</p></div>""",
+        hero_sub = ("Everything here is computed on this machine — same engine as "
+                    "the CLI, identical JSON/Markdown output.")
+    st.markdown(f"""<div class='rcn-hero'><h1>Analysis results</h1>
+      <p><b>Every document, one clear view.</b>{' ' + hero_sub if hero_sub else ''}</p></div>""",
                 unsafe_allow_html=True)
     st.write("")
     d1, d2 = st.columns([1, 1])
-    d1.download_button("Tải JSON", js_bytes, f"{name}.understanding.json",
+    d1.download_button("Download JSON", js_bytes, f"{name}.understanding.json",
                        "application/json", width="stretch",
                        type="primary", icon=":material/data_object:",
-                       help="Toàn bộ bản ghi phân tích (định dạng JSON)")
-    d2.download_button("Tải Markdown", md_txt.encode("utf-8"),
+                       help="The full analysis record as JSON")
+    d2.download_button("Download Markdown", md_txt.encode("utf-8"),
                        f"{name}.understanding.md", "text/markdown",
                        width="stretch", type="secondary",
                        icon=":material/article:",
-                       help="Báo cáo dạng Markdown, giống hệt dòng lệnh")
+                       help="Markdown report, identical to the CLI")
     st.write("")
 
     if rec.get("note"):  # ảnh / PDF scan -> chỉ phân loại
-        st.info("Đây là ảnh/trang scan: hệ thống chỉ xác định loại tài liệu, "
-                "không đọc chữ (theo phạm vi dự án).")
+        st.info("This is an image or scanned page: the system only detects the document "
+                "type — it does not read the text (project scope).")
         type_card(rec.get("doc_type", {}))
         st.stop()
 
     tab_sm, tab_ov, tab_kw, tab_tx, tab_tp, tab_fd, tab_al = st.tabs(
-        ["📝 Tóm tắt", "📊 Tổng quan",
-         f"🔑 Từ khóa ({len(rec.get('keywords') or [])})",
-         "📃 Văn bản gốc", "🧩 Chủ đề",
-         f"🗂 Trường dữ liệu ({len((rec.get('fields') or {}).get('fields') or {})})",
-         "🧠 Thuật toán"],
-        default="📝 Tóm tắt")
+        ["📝 Summary", "📊 Overview",
+         f"🔑 Keywords ({len(rec.get('keywords') or [])})",
+         "📃 Source text", "🧩 Topics",
+         f"🗂 Extracted fields ({len((rec.get('fields') or {}).get('fields') or {})})",
+         "🧠 Algorithms"],
+        default="📝 Summary")
 
     with tab_ov:
         c1, c2 = st.columns([1, 1])
@@ -1081,41 +1078,41 @@ if rec:
         with c2:
             totals = (rec.get("structure") or {}).get("stats", {})
             m1, m2, m3 = st.columns(3)
-            m1.metric("Số từ", f"{totals.get('words', 0):,}")
-            m2.metric("Số câu", totals.get("sentences", 0))
-            m3.metric("Số đoạn", totals.get("paragraphs", 0))
-        st.caption(f"Nguồn: `{rec.get('source')}`"
-                   + (f" · loại tệp {str(rec.get('file_type')).upper()}"
+            m1.metric("Words", f"{totals.get('words', 0):,}")
+            m2.metric("Sentences", totals.get("sentences", 0))
+            m3.metric("Paragraphs", totals.get("paragraphs", 0))
+        st.caption(f"Source: `{rec.get('source')}`"
+                   + (f" · file type {str(rec.get('file_type')).upper()}"
                       if rec.get("file_type") else ""))
 
-        # ---- hàng metrics phụ: mật độ đọc + trường khớp ----
+        # ---- secondary metric row: reading density + matched fields ----
         words = totals.get("words", 0)
         sents = totals.get("sentences", 0)
         uniq = totals.get("unique_words", 0)
         m_a, m_b, m_c, m_d = st.columns(4)
-        m_a.metric("Từ độc nhất", f"{uniq:,}"
+        m_a.metric("Unique words", f"{uniq:,}"
                    + (f" ({uniq / words:.0%})" if words else ""))
-        m_b.metric("Từ / câu",
+        m_b.metric("Words / sentence",
                    f"{words / sents:.1f}" if sents else "—")
         read_min = words / 200  # ~200 từ/phút đọc trung bình
-        m_c.metric("Thời gian đọc",
-                   f"{read_min:.1f} phút" if read_min >= 1
-                   else f"{read_min * 60:.0f} giây")
+        m_c.metric("Reading time",
+                   f"{read_min:.1f} min" if read_min >= 1
+                   else f"{read_min * 60:.0f} sec")
         fd_ov = rec.get("fields") or {}
         flds = fd_ov.get("fields") or {}
-        m_d.metric("Trường khớp",
+        m_d.metric("Fields matched",
                    f"{fd_ov.get('matched', 0)}/{len(flds)}"
                    if flds else "—")
 
-        # ---- phân bố độ dài đoạn ----
+        # ---- paragraph length distribution ----
         paras = (rec.get("structure") or {}).get("paragraphs") or []
         if len(paras) >= 2:
             st.write("")
-            st.markdown("**Độ dài từng đoạn (số từ):**")
+            st.markdown("**Paragraph length (words):**")
             st.bar_chart(
                 {f"¶{p.get('index', i) + 1}": p.get("word_count", 0)
                  for i, p in enumerate(paras)},
-                height=220, x_label="đoạn", y_label="số từ")
+                height=220, x_label="paragraph", y_label="words")
 
     with tab_kw:
         kws = rec.get("keywords") or []
@@ -1125,12 +1122,12 @@ if rec:
             kw_chart(kws)
         else:
             st.markdown("### 🔑")
-            st.write("**Yên lặng quá.** Tài liệu này không có cụm từ nào "
-                     "nổi bật cả.")
-            demo_cta("Tài liệu dài hơn sẽ cho từ khóa rõ vẽ hơn.")
+            st.write("**Nothing stands out.** No distinctive phrases were found "
+                     "in this document.")
+            demo_cta("Longer documents produce clearer keywords.")
 
     with tab_tx:
-        # Văn bản gốc dựng lại từ L1 (đúng thứ tự câu/đoạn seam đã phân tích)
+        # Rebuild the source from L1 (exact sentence/paragraph order the seam saw)
         paras = ((rec.get("structure") or {}).get("paragraphs") or [])
         if paras:
             full_text = "\n\n".join(
@@ -1140,7 +1137,7 @@ if rec:
                 f"{highlight_text(full_text, rec.get('keywords') or [], st.session_state.get('dark', True))}"
                 f"</div>", unsafe_allow_html=True)
         else:
-            st.info("Không có văn bản gốc để hiển thị (tài liệu chỉ phân loại).")
+            st.info("No source text to show (this document was classification-only).")
 
     with tab_tp:
         tp = rec.get("topics") or {}
@@ -1155,32 +1152,32 @@ if rec:
                 st.divider()
                 c_curve, c_formula = st.columns([3, 2])
                 with c_curve:
-                    st.markdown("**Độ gắn kết nhóm chủ đề theo số nhóm (k):**")
+                    st.markdown("**Topic coherence vs. number of topics (k):**")
                     st.line_chart(
                         data={c["k"]: c["umass"] for c in curve},
-                        x_label="số nhóm (k)", y_label="độ gắn kết")
-                    st.caption(f"Điểm cao nhất k={tp.get('k')} "
-                               f"({tp.get('selected_by')}) → nhóm được chọn.")
+                        x_label="number of topics (k)", y_label="coherence")
+                    st.caption(f"Peak at k={tp.get('k')} "
+                               f"({tp.get('selected_by')}) → that topic count is chosen.")
                 with c_formula:
                     f_bg = SURFACE_INDIGO if st.session_state.get(
                         "dark", True) else "#f5f7ff"
                     st.markdown(
-                        "<div style='background:%s;"
+                        f"<div style='background:{f_bg};'"
                         "border:1px solid rgba(88,101,242,.40);border-radius:16px;"
-                        "padding:12px 14px;font-size:12.5px;line-height:1.7'>"
-                        "<b>Độ gắn kết UMass</b> — các từ trong cùng một nhóm "
-                        "có thường xuất hiện chung trong cùng một đoạn không.<br><br>"
+                        "padding:12px 14px;font-size:12.5px;line-height:1.7>"
+                        "<b>UMass coherence</b> — do words inside one topic tend to "
+                        "co-occur in the same paragraph?<br><br>"
                         "<code>log( D(wₜ & wᵢ) / D(wₜ) )</code><br>"
-                        "<span style='opacity:.75'>D(w) = số đoạn chứa từ w; "
-                        "wₜ, wᵢ = 2 từ đứng đầu nhóm.</span><br><br>"
-                        "Càng gần 0 càng gắn kết → chọn k cao nhất.</div>"
-                        % f_bg,
+                        "<span style='opacity:.75'>D(w) = number of paragraphs with w; "
+                        "wₜ, wᵢ = the two top words of the topic.</span><br><br>"
+                        "Closer to 0 is more coherent → pick the highest k.</div>"
+                        ,
                         unsafe_allow_html=True)
         else:
             st.markdown("### 🧩")
-            st.write("**Chưa đủ chất liệu.** Văn bản ngắn quá nên chưa tách "
-                     "ra được nhóm chủ đề.")
-            demo_cta("Cần tối thiểu 3 đoạn có nội dung — hoặc xem thử:",
+            st.write("**Not enough material.** The text is too short to separate "
+                     "into topics.")
+            demo_cta("Topic separation needs at least 3 content paragraphs — or preview:",
                      cta_key="cta_topics")
 
     with tab_fd:
@@ -1188,25 +1185,25 @@ if rec:
         fields = fd.get("fields") or {}
         if fields:
             st.dataframe(
-                [{"Trường": k,
-                  "Giá trị": ", ".join(map(str, v)) if isinstance(v, list)
+                [{"Field": k,
+                  "Value": ", ".join(map(str, v)) if isinstance(v, list)
                   else str(v)}
                  for k, v in fields.items()],
                 hide_index=True, width="stretch")
             ok, tot = fd.get("matched", 0), len(fields)
             if ok == tot and tot:
-                st.success(f"Khớp đầy đủ {ok}/{tot} trường theo loại "
+                st.success(f"Matched all {ok}/{tot} fields for type "
                            f"\"{label_meta(fd.get('doc_type'))[0]}\".")
             else:
-                st.caption(f"Khớp {ok}/{tot} trường theo loại "
+                st.caption(f"Matched {ok}/{tot} fields for type "
                            f"\"{label_meta(fd.get('doc_type'))[0]}\".")
             for miss in fd.get("missing_required") or []:
-                st.warning(f"⚠️ Thiếu trường bắt buộc: **{miss}**")
+                st.warning(f"⚠️ Missing required field: **{miss}**")
         else:
             st.markdown("### 🗂")
-            st.write("**Không bóc được trường nào.** Tài liệu này không mang "
-                     "dấu hiệu số hiệu, ngày hay tiền tệ.")
-            demo_cta("Hóa đơn/biên lai sẽ cho kết quả tốt nhất — hoặc thử:")
+            st.write("**No fields extracted.** This document carries no signs of "
+                     "numbers, dates or currency.")
+            demo_cta("Invoices and receipts extract best — or try:")
 
     with tab_sm:
         sm = rec.get("summary") or {}
@@ -1218,7 +1215,7 @@ if rec:
         st.write("")
         sentences = sm.get("sentences")
         if engine == "abstractive":
-            body = sm.get("text") or "(model không sinh ra nội dung)"
+            body = sm.get("text") or "(the model produced no text)"
             esc_body = html.escape(body)
             st.markdown(f"""><div style='font-size:16px;line-height:1.65'>"""
                         f"""{esc_body}</div>""", unsafe_allow_html=True)
@@ -1229,76 +1226,76 @@ if rec:
             st.markdown(f"""><div style='font-size:16px;line-height:1.65'>"""
                         f"""{esc_body}</div>""", unsafe_allow_html=True)
             st.code(body, language=None)  # copy 1 chạm
-            with st.expander("🔎 Xem từng câu được chọn"):
+            with st.expander("🔎 Show each selected sentence"):
                 for s in sentences:
                     st.markdown(f"> ¶{s.get('paragraph', '?')} — "
                                 f"{html.escape(s['text'])}")
             comp = sm.get("compression") or {}
             orig, kept = comp.get("original_sentences"), comp.get("kept")
-            foot = (f"Nén: giữ {kept}/{orig} câu."
-                    if kept is not None else f"Từ {orig} câu gốc.")
+            foot = (f"Compression: kept {kept}/{orig} sentences."
+                    if kept is not None else f"From {orig} original sentences.")
             st.caption(foot)
         else:
             st.markdown("### 📝")
-            st.write("**Không có gì để tóm.** Nội dung chưa đủ dài để rút "
-                     "ra câu quan trọng.")
-            demo_cta("Dán thêm nội dung, hoặc xem thử:")
+            st.write("**Nothing to summarize.** The content is not long enough "
+                     "to surface key sentences.")
+            demo_cta("Paste more content, or preview:")
         if sm.get("engine_fallback"):
-            st.warning("⚠️ Model sinh đoạn chưa cài — đã tự chuyển sang "
-                       "trích xuất câu, kết quả vẫn đầy đủ.")
+            st.warning("⚠️ The abstractive model is not installed — fell back to "
+                       "sentence extraction; the result is still complete.")
 
     with tab_al:
-            st.markdown("**Biểu đồ trực quan cho từng thuật toán trong pipeline:**")
+            st.markdown("**A visual chart for each algorithm in the pipeline:**")
             st.write("")
 
             # CNN
-            st.markdown("#### 🖼️ CNN — Phân loại ảnh")
+            st.markdown("#### 🖼️ CNN — Image classification")
             fig_cnn = chart_cnn()
             if fig_cnn:
                 st.pyplot(fig_cnn)
                 plt.close(fig_cnn)
             else:
-                st.caption("⚠️ Chưa có dữ liệu huấn luyện CNN (thiếu runs/E1/history.csv).")
+                st.caption("⚠️ No CNN training data (missing runs/E1/history.csv).")
 
             st.divider()
 
             # SVM / Confusion Matrix
-            st.markdown("#### 📊 Phân loại văn bản — Confusion Matrix")
+            st.markdown("#### 📊 Text classification — Confusion matrix")
             fig_svm = chart_svm_confusion()
             if fig_svm:
                 st.pyplot(fig_svm)
                 plt.close(fig_svm)
             else:
-                st.caption("⚠️ Chưa có dữ liệu confusion matrix (thiếu runs/E1/confusion_matrix.csv).")
+                st.caption("⚠️ No confusion-matrix data (missing runs/E1/confusion_matrix.csv).")
 
             st.divider()
 
             # TF-IDF
-            st.markdown("#### 🔑 TF-IDF — Từ khóa")
+            st.markdown("#### 🔑 TF-IDF — Keywords")
             kws = rec.get("keywords") or []
             fig_tfidf = chart_tfidf_algo(kws)
             if fig_tfidf:
                 st.pyplot(fig_tfidf)
                 plt.close(fig_tfidf)
             else:
-                st.caption("⚠️ Chưa có từ khóa để vẽ biểu đồ.")
+                st.caption("⚠️ No keywords to chart.")
 
             st.divider()
 
             # LDA Coherence
-            st.markdown("#### 🧩 LDA — UMass Coherence")
+            st.markdown("#### 🧩 LDA — UMass coherence")
             tp = rec.get("topics") or {}
             fig_lda = chart_lda_coherence(tp)
             if fig_lda:
                 st.pyplot(fig_lda)
                 plt.close(fig_lda)
             else:
-                st.caption("⚠️ Chưa đủ dữ liệu chủ đề (cần ≥3 đoạn).")
+                st.caption("⚠️ Not enough topic data (needs ≥3 paragraphs).")
 
             st.divider()
 
             # PCA
-            st.markdown("#### 📉 PCA — Giảm chiều dữ liệu")
+            st.markdown("#### 📉 PCA — Dimensionality reduction")
             fig_pca = chart_pca_algo()
             if fig_pca:
                 st.pyplot(fig_pca)
@@ -1307,41 +1304,41 @@ if rec:
             st.divider()
 
             # K-Means
-            st.markdown("#### 🎯 K-Means — Phân cụm")
+            st.markdown("#### 🎯 K-Means — Clustering")
             fig_km = chart_kmeans_algo()
             if fig_km:
                 st.pyplot(fig_km)
                 plt.close(fig_km)
 
             st.divider()
-            st.caption("Tất cả thuật toán chạy offline trên máy — TF-IDF, LDA, PCA, K-Means, CNN, SVM, MMR, T5.")
+            st.caption("All algorithms run offline on this machine — TF-IDF, LDA, PCA, K-Means, CNN, SVM, MMR, T5.")
 
-    with st.expander("🔧 Chi tiết kỹ thuật (cho demo/bảo vệ)"):
+    with st.expander("🔧 Technical details (for demo/defense)"):
         st.json(rec, expanded=False)
 else:
     st.markdown("""<div class='rcn-hero'><h1>RCN STUDIO</h1>
-      <p><b>Mọi tài liệu, một cái nhìn rõ ràng.</b> Nạp tài liệu hoặc dán văn
-      bản ở thanh bên rồi bấm “Phân tích”. Chưa sẵn sàng? Chọn “Dữ liệu mẫu”
-      để xem thử toàn bộ giao diện.</p>
+      <p><b>Every document, one clear view.</b> Load a file or paste text in the
+      sidebar and press “Analyze”. Not ready yet? Pick “Sample data”
+      to preview the whole interface.</p>
       </div>""", unsafe_allow_html=True)
     st.write("")
     st.markdown("<div class='rcn-marquee'><span>"
-                "PHÂN LOẠI &nbsp;·&nbsp; TỪ KHÓA &nbsp;·&nbsp; CHỦ ĐỀ "
-                "&nbsp;·&nbsp; TRƯỜNG DỮ LIỆU &nbsp;·&nbsp; TÓM TẮT "
+                "CLASSIFY &nbsp;·&nbsp; KEYWORDS &nbsp;·&nbsp; TOPICS "
+                "&nbsp;·&nbsp; FIELDS &nbsp;·&nbsp; SUMMARY "
                 "&nbsp;·&nbsp; 100% OFFLINE &nbsp;·&nbsp; "
-                "PHÂN LOẠI &nbsp;·&nbsp; TỪ KHÓA &nbsp;·&nbsp; CHỦ ĐỀ "
-                "&nbsp;·&nbsp; TRƯỜNG DỮ LIỆU &nbsp;·&nbsp; TÓM TẮT "
+                "CLASSIFY &nbsp;·&nbsp; KEYWORDS &nbsp;·&nbsp; TOPICS "
+                "&nbsp;·&nbsp; FIELDS &nbsp;·&nbsp; SUMMARY "
                 "&nbsp;·&nbsp; 100% OFFLINE &nbsp;·&nbsp; "
                 "</span></div>", unsafe_allow_html=True)
     st.write("")
     c1, c2, c3 = st.columns(3)
     feats = [
-        ("📊", "Hiểu cấu trúc",
-         "Đếm từ – câu – đoạn, biết ngay tài liệu dày hay mỏng."),
-        ("🔑", "Từ khóa & chủ đề",
-         "Cụm từ đặc trưng + nhóm chủ đề chiếm tỷ trọng, có nhãn dễ đọc."),
-        ("🗂", "Bóc trường dữ liệu",
-         "Số hiệu, ngày, tiền, bên mua/bán... thành bảng gọn gàng."),
+        ("📊", "Structure at a glance",
+         "Words, sentences, paragraphs — know instantly if a document is dense or light."),
+        ("🔑", "Keywords & topics",
+         "Distinctive phrases plus topic shares with readable labels."),
+        ("🗂", "Structured fields",
+         "Numbers, dates, money, parties... cleanly extracted into a table."),
     ]
     for col, (icon, title, desc) in zip((c1, c2, c3), feats):
         with col:
@@ -1350,12 +1347,12 @@ else:
                 f"<h3>{title}</h3><p>{desc}</p></div>",
                 unsafe_allow_html=True)
     st.write("")
-    st.info("💡 Mẹo: chọn **🧪 Dữ liệu mẫu** ở thanh bên để xem thử giao diện "
-            "mà không cần chuẩn bị gì.", icon="👈")
+    st.info("💡 Tip: pick **🧪 Sample data** in the sidebar to preview the UI "
+            "with zero preparation.", icon="👈")
     st.write("")
-    st.markdown("#### 🧠 Thuật toán ML/DL")
+    st.markdown("#### 🧠 ML/DL algorithms")
     algo_panel()
 
 st.markdown("---")
-st.caption("RCN Studio · Mọi tài liệu, một cái nhìn rõ ràng · đầu ra "
-           "JSON/Markdown giống hệt dòng lệnh.")
+st.caption("RCN Studio · Every document, one clear view · JSON/Markdown output "
+           "identical to the CLI.")
