@@ -91,13 +91,13 @@ The single seam returns one JSON record per document:
 ```text
 {
   "source": "datasets/text/invoice/invoice_0001.txt",
-  "doc_type": "invoice",                    # router label ("unavailable" if no model)
+  "file_type": "txt",
+  "doc_type": {"label": "invoice", "via": "text_svm", "confidence": 0.98},   # router label; "unavailable" if no model
   "structure": {…},                          # L1: paragraphs, sentences, words, stats
   "keywords": […],                           # L2: top-k TF-IDF keyphrases (uni + bigram)
-  "topics": […],                             # L3: LDA topics, k chosen by UMass coherence
+  "topics": {…},                             # L3: LDA topics, k chosen by UMass coherence
   "fields": {…},                             # L4: invoice number, dates (ISO), amounts …
-  "summary": {…},                            # L5: extractive (MMR) or abstractive (seq2seq)
-  "timing": {…}
+  "summary": {…}                             # L5: extractive (MMR) or abstractive (seq2seq)
 }
 ```
 
