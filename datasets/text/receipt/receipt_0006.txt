@@ -1,0 +1,11 @@
+NORTHWIND SOLUTIONS
+*** SALES RECEIPT ***
+2021-11-27
+------------------------
+monitor arm     1865.64
+desk lamp       1020.20
+desk lamp        833.90
+------------------------
+TOTAL         967.59
+CARD
+THANK YOU - COME AGAIN!

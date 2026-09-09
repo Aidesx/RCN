@@ -1,0 +1,15 @@
+INVOICE #INV-10036
+Date: 2024-10-28
+From: Acme Corporation
+Bill to:
+  Lan Pham
+
+Items:
+  5 x notebook pack @ 392.90
+  4 x laptop stand @ 802.31
+  1 x printer paper @ 1785.86
+  4 x monitor arm @ 441.59
+
+TOTAL DUE: $8725.96
+Payment terms: net 30 days.
+Please reference the invoice number.

@@ -149,14 +149,15 @@ per-doc numbers: [benchmarks/RESULTS.md](benchmarks/RESULTS.md).
 
 ## Training data & splits
 
-- **Image corpus** — ~700 page images across the six classes, assembled via
-  `scripts/download_rvlcdip_subset.py`; **text corpus** — 360 English business/news documents
+- **Image corpus** — ~700 page images across the six classes: 500 RVL-CDIP pages fetched by
+  `scripts/download_rvlcdip_subset.py` + 200 SROIE receipts (source recorded in
+  `datasets/raw/PROVENANCE.csv`); **text corpus** — 360 English business/news documents
   generated with `scripts/make_text_corpus.py` (the understanding layers are language-agnostic
   with bilingual stopwords; Vietnamese coverage comes from the bundled benchmark eval set in
   `benchmarks/data/`).
 - Split 70/15/15 (train/val/test) with a manifest (`datasets/splits/manifest.csv`), leak-checked.
-- Everything under `datasets/` is gitignored; exact provenance is recorded in
-  `datasets/text/PROVENANCE_TEXT.csv`.
+- The corpora are committed (fresh clones run out of the box); exact provenance is recorded in
+  `datasets/raw/PROVENANCE.csv` and `datasets/text/PROVENANCE_TEXT.csv`.
 - Summarization corpora (XLSum-VI, VietNews, XSum/CNN-DailyMail, …) live outside this
   repository (not versioned).
 

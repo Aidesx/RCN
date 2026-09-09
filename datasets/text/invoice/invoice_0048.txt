@@ -1,0 +1,15 @@
+INVOICE #INV-10048
+Date: 2023-08-08
+From: Northwind Solutions
+Bill to:
+  Peter Le
+
+Items:
+  3 x whiteboard marker @ 62.26
+  2 x whiteboard marker @ 977.66
+  3 x desk lamp @ 683.98
+  5 x USB cable @ 25.25
+
+TOTAL DUE: $4320.29
+Payment terms: net 30 days.
+Please reference the invoice number.

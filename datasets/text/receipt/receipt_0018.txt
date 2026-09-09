@@ -1,0 +1,13 @@
+ACME CORPORATION
+*** SALES RECEIPT ***
+2023-06-24
+------------------------
+laptop stand     405.59
+whiteboard mar  1064.05
+desk lamp       1661.79
+desk lamp       1828.53
+monitor arm     1934.93
+------------------------
+TOTAL         593.81
+CARD
+THANK YOU - COME AGAIN!

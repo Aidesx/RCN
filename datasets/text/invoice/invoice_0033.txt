@@ -1,0 +1,14 @@
+INVOICE #INV-10033
+Date: 2023-09-10
+From: Metro Supplies
+Bill to:
+  Lan Pham
+
+Items:
+  4 x laptop stand @ 1395.93
+  2 x notebook pack @ 843.79
+  2 x desk lamp @ 1232.95
+
+TOTAL DUE: $9737.20
+Payment terms: net 30 days.
+Please reference the invoice number.

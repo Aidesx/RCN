@@ -1,0 +1,12 @@
+NORTHWIND SOLUTIONS
+*** SALES RECEIPT ***
+2021-06-09
+------------------------
+printer paper   1940.52
+notebook pack   1730.50
+office chair    1317.03
+monitor arm      829.43
+------------------------
+TOTAL         379.23
+CARD
+THANK YOU - COME AGAIN!

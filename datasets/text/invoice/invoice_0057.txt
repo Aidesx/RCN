@@ -1,0 +1,12 @@
+INVOICE #INV-10057
+Date: 2021-03-08
+From: Global Traders Ltd
+Bill to:
+  Peter Le
+
+Items:
+  2 x monitor arm @ 10.34
+
+TOTAL DUE: $20.68
+Payment terms: net 30 days.
+Please reference the invoice number.

@@ -1,0 +1,12 @@
+INVOICE #INV-10018
+Date: 2022-04-10
+From: Global Traders Ltd
+Bill to:
+  John Smith
+
+Items:
+  3 x monitor arm @ 119.04
+
+TOTAL DUE: $357.12
+Payment terms: net 30 days.
+Please reference the invoice number.

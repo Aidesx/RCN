@@ -1,6 +1,10 @@
-datasets/
+# Sample corpora are COMMITTED (image + text + splits) so a fresh clone runs out of the box.
+# Only these local artifacts stay ignored:
+datasets/splits/spot_check/
+datasets/splits/manifest.pre_repair_backup.csv
 models/artifacts/
 runs/
+benchmarks/results/
 __pycache__/
 *.pyc
 .venv/

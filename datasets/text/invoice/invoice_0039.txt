@@ -1,0 +1,15 @@
+INVOICE #INV-10039
+Date: 2025-02-05
+From: Global Traders Ltd
+Bill to:
+  Maria Nguyen
+
+Items:
+  2 x printer paper @ 1414.31
+  4 x monitor arm @ 818.16
+  4 x notebook pack @ 129.22
+  4 x office chair @ 1810.15
+
+TOTAL DUE: $13858.74
+Payment terms: net 30 days.
+Please reference the invoice number.

@@ -1,0 +1,11 @@
+# 2021-10-16
+
+Dear Anna,
+
+Thank you for your continued partnership with Sunrise Logistics.
+We are writing regarding your account status and upcoming service changes.
+Please contact our office if you have any questions about this letter.
+
+Sincerely,
+Anna Vo
+Customer Relations

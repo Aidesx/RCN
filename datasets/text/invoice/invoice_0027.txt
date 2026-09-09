@@ -1,0 +1,12 @@
+INVOICE #INV-10027
+Date: 2023-04-22
+From: Global Traders Ltd
+Bill to:
+  Anna Vo
+
+Items:
+  3 x notebook pack @ 1561.33
+
+TOTAL DUE: $4683.99
+Payment terms: net 30 days.
+Please reference the invoice number.

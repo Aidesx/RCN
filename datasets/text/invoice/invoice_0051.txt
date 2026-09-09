@@ -1,0 +1,13 @@
+INVOICE #INV-10051
+Date: 2023-05-08
+From: Acme Corporation
+Bill to:
+  Anna Vo
+
+Items:
+  3 x laptop stand @ 243.51
+  2 x monitor arm @ 436.69
+
+TOTAL DUE: $1603.91
+Payment terms: net 30 days.
+Please reference the invoice number.

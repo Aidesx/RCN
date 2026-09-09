@@ -1,0 +1,13 @@
+INVOICE #INV-10012
+Date: 2024-09-15
+From: Acme Corporation
+Bill to:
+  Maria Nguyen
+
+Items:
+  1 x USB cable @ 679.48
+  5 x printer paper @ 444.33
+
+TOTAL DUE: $2901.13
+Payment terms: net 30 days.
+Please reference the invoice number.

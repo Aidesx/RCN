@@ -38,23 +38,11 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Generate the sample corpora (once, before demo runs and the full test suite)
+### Sample data
 
-The corpora are gitignored (see [Repository layout](#repository-layout)) — a fresh clone must
-recreate them. The text corpus is generated locally and deterministically (seed 42, no network);
-the image corpus downloads ~700 RVL-CDIP pages from the Hub:
-
-```bash
-python scripts/make_text_corpus.py        # datasets/text/ 360 EN docs + PROVENANCE_TEXT.csv
-python scripts/build_text_manifest.py     # datasets/splits/text_manifest.csv (70/15/15)
-python scripts/download_rvlcdip_subset.py # datasets/raw/ ~700 page images (needs network)
-python scripts/build_split_manifest.py    # datasets/splits/manifest.csv (70/15/15)
-```
-
-Skip the last two if you only want text documents — the text-only CLI/app pipeline works without
-the image corpus, and so do the text-backed tests. Note that 11 functional tests exercise the
-image corpora directly and stay red until `datasets/raw/` + `manifest.csv` exist (they error
-with missing-file, not silently skip).
+The corpora ship **inside the repo** (see [Repository layout](#repository-layout)), so a fresh
+clone runs out of the box. The `scripts/` generators (`make_text_corpus.py`,
+`download_rvlcdip_subset.py`, `build_*_manifest.py`) are kept for provenance and regeneration.
 
 Optional — download the multilingual seq2seq summarizer (needed only for abstractive mode):
 
@@ -88,9 +76,8 @@ no I/O:
 python scripts/understand_text.py --demo
 ```
 
-Run the test suite (177 functional tests; the 12 model-dependent tests run on demand — the
-model tests need real SVM / keras / summarizer artifacts, and 13 corpus-backed functional tests
-need the generated corpora from the step above, so run that step first on a fresh clone):
+Run the test suite (177 functional tests need no trained model artifacts; the 12 model-dependent
+tests run on demand and need real SVM / keras / summarizer artifacts):
 
 ```bash
 python -m pytest -q            # functional: L1–L5, IO, dataset, UI logic (~1 min)
@@ -232,8 +219,9 @@ src/docproc/                Core package — see src/ARCHITECTURE.md
   evaluation/               metrics · acceptance gate · run reports
   nlp/                      structure · keywords · topics · fields · summary · report seam
 scripts/                    understand_text.py (CLI) · app.py (RCN Studio) · train_summarizer.py
-datasets/                   raw images (~700) + text corpus (360 EN docs) + splits (gitignored;
-                            provenance: datasets/text/PROVENANCE_TEXT.csv)
+datasets/                   Committed corpora: raw images (~700: 500 RVL-CDIP pages + 200 SROIE
+                            receipts) + text corpus (360 EN docs) + splits (70/15/15); provenance:
+                            datasets/raw/PROVENANCE.csv · datasets/text/PROVENANCE_TEXT.csv
 models/artifacts/           Trained artifacts (gitignored): joblib vectorizer/SVM, keras CNN,
                             summarizer checkpoints (vit5_v1, soups, mT5, pretrained baselines)
 runs/                       Per-experiment metrics (E0b, E1, E-U0/U2 …) — gitignored;

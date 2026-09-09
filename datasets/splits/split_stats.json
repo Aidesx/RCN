@@ -1,0 +1,35 @@
+{
+  "train": {
+    "letter": 70,
+    "article": 70,
+    "invoice": 70,
+    "report": 70,
+    "form": 70,
+    "receipt": 140
+  },
+  "validation": {
+    "letter": 15,
+    "article": 15,
+    "form": 15,
+    "receipt": 30,
+    "invoice": 15,
+    "report": 15
+  },
+  "test": {
+    "form": 15,
+    "receipt": 30,
+    "invoice": 15,
+    "article": 15,
+    "report": 15,
+    "letter": 15
+  },
+  "total_pages": 700,
+  "seed": 42,
+  "spot_check": {
+    "status": "APPROVED by user 2026-08-19 (all 6 sheets reviewed, labels correct >=99%)",
+    "target": 20,
+    "agreement_target": 0.99,
+    "reviewer": "user",
+    "approved_on": "2026-08-19"
+  }
+}

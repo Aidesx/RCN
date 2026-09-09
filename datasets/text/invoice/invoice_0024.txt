@@ -1,0 +1,13 @@
+INVOICE #INV-10024
+Date: 2022-05-04
+From: Acme Corporation
+Bill to:
+  Anna Vo
+
+Items:
+  3 x USB cable @ 567.10
+  3 x desk lamp @ 411.18
+
+TOTAL DUE: $2934.84
+Payment terms: net 30 days.
+Please reference the invoice number.

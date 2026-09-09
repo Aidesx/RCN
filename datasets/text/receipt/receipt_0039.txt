@@ -1,0 +1,11 @@
+GLOBAL TRADERS LTD
+*** SALES RECEIPT ***
+2022-07-18
+------------------------
+whiteboard mar   148.79
+office chair     875.26
+monitor arm     1842.72
+------------------------
+TOTAL        1724.91
+CARD
+THANK YOU - COME AGAIN!

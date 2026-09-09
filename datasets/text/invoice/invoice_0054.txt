@@ -1,0 +1,15 @@
+INVOICE #INV-10054
+Date: 2024-06-06
+From: Acme Corporation
+Bill to:
+  David Tran
+
+Items:
+  1 x notebook pack @ 1645.12
+  4 x office chair @ 152.79
+  2 x desk lamp @ 302.65
+  1 x printer paper @ 1987.87
+
+TOTAL DUE: $4849.45
+Payment terms: net 30 days.
+Please reference the invoice number.

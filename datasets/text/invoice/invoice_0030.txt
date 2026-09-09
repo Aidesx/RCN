@@ -1,0 +1,14 @@
+INVOICE #INV-10030
+Date: 2024-06-09
+From: Acme Corporation
+Bill to:
+  David Tran
+
+Items:
+  5 x whiteboard marker @ 802.36
+  1 x desk lamp @ 235.11
+  2 x desk lamp @ 1163.28
+
+TOTAL DUE: $6573.47
+Payment terms: net 30 days.
+Please reference the invoice number.

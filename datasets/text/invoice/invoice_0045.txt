@@ -1,0 +1,15 @@
+INVOICE #INV-10045
+Date: 2025-01-10
+From: BluePeak Consulting
+Bill to:
+  Anna Vo
+
+Items:
+  4 x USB cable @ 1883.23
+  1 x USB cable @ 1186.24
+  1 x desk lamp @ 1395.90
+  5 x office chair @ 1612.03
+
+TOTAL DUE: $18175.21
+Payment terms: net 30 days.
+Please reference the invoice number.

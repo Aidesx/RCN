@@ -1,0 +1,15 @@
+INVOICE #INV-10006
+Date: 2023-01-08
+From: Acme Corporation
+Bill to:
+  David Tran
+
+Items:
+  3 x whiteboard marker @ 137.05
+  2 x notebook pack @ 1312.60
+  4 x laptop stand @ 290.03
+  2 x desk lamp @ 1491.25
+
+TOTAL DUE: $7178.97
+Payment terms: net 30 days.
+Please reference the invoice number.

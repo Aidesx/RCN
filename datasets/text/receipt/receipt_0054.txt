@@ -1,0 +1,13 @@
+NORTHWIND SOLUTIONS
+*** SALES RECEIPT ***
+2021-04-27
+------------------------
+whiteboard mar  1861.29
+notebook pack    111.25
+whiteboard mar   475.38
+printer paper    752.95
+office chair     640.78
+------------------------
+TOTAL         202.67
+CARD
+THANK YOU - COME AGAIN!

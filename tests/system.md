@@ -53,20 +53,11 @@ tests/
 
 ## Running
 
-The corpora are gitignored (see the README quickstart), so a **fresh clone must generate them
-first** — otherwise the 13 corpus-backed functional tests fail with missing-file errors:
+The corpora are committed (see the README "Sample data"), so a fresh clone runs directly:
 
 ```bash
-# From the repo root RCN/ — one-time data setup (see README "Generate the sample corpora")
-python scripts/make_text_corpus.py        # text corpus, deterministic, no network
-python scripts/build_text_manifest.py
-python scripts/download_rvlcdip_subset.py # image corpus (~700 RVL-CDIP pages, needs network)
-python scripts/build_split_manifest.py
-```
-
-```bash
-python -m pytest -q              # default: 177 FUNCTIONAL tests (164 self-contained
-                                 #   + 13 corpus-backed; no trained-model artifacts needed)
+# From the repo root RCN/
+python -m pytest -q              # default: 177 FUNCTIONAL tests (no trained-model artifacts needed)
 python -m pytest -q -m model     # 12 MODEL-DEPENDENT tests (SVM / keras CNN / seq2seq checkpoint)
 python -m pytest tests/io/ -q    # just ingestion
 ```
@@ -74,9 +65,8 @@ python -m pytest tests/io/ -q    # just ingestion
 ## Role split (2026-09-08)
 
 - **Default suite (`pytest -q`) = functional.** L1–L5, IO, dataset, text-classifier logic, UI
-  chrome — deterministic and green even on a machine with no trained artifacts, provided the
-  generated corpora exist (13 tests read the real manifests/corpora and fail fast when
-  `datasets/` is missing; the other 164 are self-contained or use tmp fixtures)
+  chrome — deterministic and green even on a machine with no trained artifacts (13 tests read
+  the committed corpora; the other 164 are self-contained or use tmp fixtures)
   (`pyproject.toml` sets `addopts = -m "not model"`).
 - **`pytest -m model` = model-dependent.** Needs the real artifacts:
   `tests/ui/*` (UI runs the *real* core: SVM + abstractive checkpoint),

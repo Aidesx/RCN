@@ -1,0 +1,14 @@
+INVOICE #INV-10003
+Date: 2021-02-13
+From: Acme Corporation
+Bill to:
+  David Tran
+
+Items:
+  5 x office chair @ 532.72
+  4 x notebook pack @ 1074.78
+  1 x whiteboard marker @ 1106.32
+
+TOTAL DUE: $8069.04
+Payment terms: net 30 days.
+Please reference the invoice number.

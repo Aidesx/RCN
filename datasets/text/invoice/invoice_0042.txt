@@ -1,0 +1,14 @@
+INVOICE #INV-10042
+Date: 2024-03-02
+From: Sunrise Logistics
+Bill to:
+  Lan Pham
+
+Items:
+  2 x whiteboard marker @ 912.13
+  4 x notebook pack @ 560.12
+  3 x monitor arm @ 1670.65
+
+TOTAL DUE: $9076.69
+Payment terms: net 30 days.
+Please reference the invoice number.

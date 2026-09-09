@@ -1,0 +1,13 @@
+INVOICE #INV-10000
+Date: 2021-01-24
+From: Sunrise Logistics
+Bill to:
+  Maria Nguyen
+
+Items:
+  2 x printer paper @ 1474.26
+  5 x office chair @ 846.73
+
+TOTAL DUE: $7182.17
+Payment terms: net 30 days.
+Please reference the invoice number.

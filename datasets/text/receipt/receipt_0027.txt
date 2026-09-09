@@ -1,0 +1,10 @@
+ACME CORPORATION
+*** SALES RECEIPT ***
+2022-12-14
+------------------------
+printer paper    955.11
+whiteboard mar  1028.91
+------------------------
+TOTAL         222.56
+CASH
+THANK YOU - COME AGAIN!

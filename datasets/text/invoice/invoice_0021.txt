@@ -1,0 +1,13 @@
+INVOICE #INV-10021
+Date: 2023-04-22
+From: Metro Supplies
+Bill to:
+  David Tran
+
+Items:
+  3 x desk lamp @ 794.59
+  4 x printer paper @ 635.77
+
+TOTAL DUE: $4926.85
+Payment terms: net 30 days.
+Please reference the invoice number.

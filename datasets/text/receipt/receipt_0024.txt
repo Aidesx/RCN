@@ -1,0 +1,10 @@
+ACME CORPORATION
+*** SALES RECEIPT ***
+2022-11-21
+------------------------
+office chair    1574.66
+USB cable       1977.70
+------------------------
+TOTAL        1575.02
+CASH
+THANK YOU - COME AGAIN!

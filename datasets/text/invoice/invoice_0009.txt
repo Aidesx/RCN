@@ -1,0 +1,14 @@
+INVOICE #INV-10009
+Date: 2022-08-01
+From: Metro Supplies
+Bill to:
+  Anna Vo
+
+Items:
+  5 x printer paper @ 1525.11
+  3 x USB cable @ 1684.13
+  2 x laptop stand @ 750.96
+
+TOTAL DUE: $14179.86
+Payment terms: net 30 days.
+Please reference the invoice number.
