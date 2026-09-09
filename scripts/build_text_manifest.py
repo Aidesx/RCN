@@ -30,6 +30,7 @@ for cls, docs in sorted(by_class.items()):
                           else "validation" if i < n_train + n_val else "test")
 
 man = paths.SPLITS_DIR / "text_manifest.csv"
+paths.SPLITS_DIR.mkdir(parents=True, exist_ok=True)
 with open(man, "w", newline="", encoding="utf-8") as f:
     w = csv.writer(f)
     w.writerow(["doc_id", "class", "file_name", "split"])

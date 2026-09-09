@@ -10,8 +10,8 @@ pieces fit together and what is actually trained and shipped.
 | Component | Technology | Status |
 | --- | --- | --- |
 | Document ingestion | PyMuPDF, pypdf, pdfplumber, python-docx, BeautifulSoup4, html2text | shipped |
-| Text routing | TF-IDF (uni+bigram) → LinearSVC (GridSearchCV, 5-fold, `f1_macro`) | shipped — `runs/E0b` |
-| Image routing | TensorFlow CNN "Architecture A" (64×64) | shipped — `runs/E1` |
+| Text routing | TF-IDF (uni+bigram) → LinearSVC (GridSearchCV, 5-fold, `f1_macro`) | shipped — `E0b` |
+| Image routing | TensorFlow CNN "Architecture A" (64×64) | shipped — `E1` |
 | L1 structure | paragraph → sentence → word + stats | shipped |
 | L2 keywords | in-document TF-IDF, top-k keyphrases | shipped |
 | L3 topics | LDA (sklearn, seed 42) + UMass coherence k-selection; PCA + K-Means topic labels | shipped |
@@ -88,10 +88,12 @@ All five layers are pure functions of their input — no hidden state, no orderi
 Six classes: `article`, `form`, `invoice`, `letter`, `receipt`, `report`.
 
 - **Text** → `text_vectorizer.joblib` (TF-IDF) + `text_model_svm.joblib` (LinearSVC, C=0.1 from
-  GridSearchCV). Trained by `scripts/run_text_baseline.py`; evaluated in `runs/E0b`.
+  GridSearchCV). Trained by `scripts/run_text_baseline.py`; evaluated in `runs/E0b` (run dirs are
+  gitignored — reproduce via the scripts).
 - **Image** → CNN "Architecture A": Conv2D(32,5) → MaxPool → Conv2D(64,5) → MaxPool → Dense(256)
   → Dropout(0.5) → Softmax(6), 64×64×3 input, sparse cross-entropy, Adam lr=1e-3. Trained by
-  `scripts/run_cnn.py`; checkpoint at `runs/E1/best.keras`.
+  `scripts/run_cnn.py`; checkpoint at `runs/E1/best.keras` (run dirs are gitignored — reproduce
+  via the scripts; headline numbers are snapshotted in this document).
 
 Measured on held-out splits (acceptance gate: ≥ 0.1 margin over the majority baseline *and*
 macro-F1 ≥ 0.5):

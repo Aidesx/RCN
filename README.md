@@ -38,6 +38,24 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+### Generate the sample corpora (once, before demo runs and the full test suite)
+
+The corpora are gitignored (see [Repository layout](#repository-layout)) — a fresh clone must
+recreate them. The text corpus is generated locally and deterministically (seed 42, no network);
+the image corpus downloads ~700 RVL-CDIP pages from the Hub:
+
+```bash
+python scripts/make_text_corpus.py        # datasets/text/ 360 EN docs + PROVENANCE_TEXT.csv
+python scripts/build_text_manifest.py     # datasets/splits/text_manifest.csv (70/15/15)
+python scripts/download_rvlcdip_subset.py # datasets/raw/ ~700 page images (needs network)
+python scripts/build_split_manifest.py    # datasets/splits/manifest.csv (70/15/15)
+```
+
+Skip the last two if you only want text documents — the text-only CLI/app pipeline works without
+the image corpus, and so do the text-backed tests. Note that 11 functional tests exercise the
+image corpora directly and stay red until `datasets/raw/` + `manifest.csv` exist (they error
+with missing-file, not silently skip).
+
 Optional — download the multilingual seq2seq summarizer (needed only for abstractive mode):
 
 ```bash
@@ -70,8 +88,9 @@ no I/O:
 python scripts/understand_text.py --demo
 ```
 
-Run the test suite (177 functional tests need no model artifacts; the 12 model-dependent tests
-run on demand):
+Run the test suite (177 functional tests; the 12 model-dependent tests run on demand — the
+model tests need real SVM / keras / summarizer artifacts, and 13 corpus-backed functional tests
+need the generated corpora from the step above, so run that step first on a fresh clone):
 
 ```bash
 python -m pytest -q            # functional: L1–L5, IO, dataset, UI logic (~1 min)
@@ -138,8 +157,11 @@ macro-F1 ≥ 0.5):
 
 | Router | Test set | Accuracy | Macro-F1 | Majority baseline | Run |
 | --- | --- | --- | --- | --- | --- |
-| Text (TF-IDF + SVM) | 54 documents | **1.00** | **1.00** | 0.17 / 0.05 | `runs/E0b` |
-| Image (CNN, 64×64) | 105 page images | **0.57** | **0.51** | 0.29 / 0.07 | `runs/E1` |
+| Text (TF-IDF + SVM) | 54 documents | **1.00** | **1.00** | 0.17 / 0.05 | `E0b` |
+| Image (CNN, 64×64) | 105 page images | **0.57** | **0.51** | 0.29 / 0.07 | `E1` |
+
+*Run names refer to `runs/`, which is gitignored; reproduce via
+`scripts/run_text_baseline.py` (text) and `scripts/run_cnn.py` (image).*
 
 The text classes are well-separated in TF-IDF space, which explains the near-perfect score; the
 image CNN is a modest but real improvement over the majority baseline — a deliberate, honest
@@ -166,11 +188,12 @@ Reading the table: fine-tuning matters — the untrained base scores 0.089 and i
 (soup 0.7 v1/v2, `vit5_v1`) is statistically indistinguishable (paired Wilcoxon p > 0.26).
 **Recommended demo checkpoint: `vit5_v1`** — comparable ROUGE-2, the lowest verbatim-copy rate
 in the top group (real paraphrase, not extraction), zero number hallucination and ~9 s/doc on
-CPU. Set it in `configs/summary.yaml`:
+CPU. The shipped `configs/summary.yaml` still points at `vit5_soup_0.5_v1`; switch it for a demo
+with the recommended checkpoint:
 
 ```yaml
 abstractive:
-  finetuned_checkpoint: vit5_v1   # was vit5_soup_0.5_v1
+  finetuned_checkpoint: vit5_v1   # currently: vit5_soup_0.5_v1
 ```
 
 Methodology, the full per-doc data and the one-command reproducer:
@@ -213,7 +236,8 @@ datasets/                   raw images (~700) + text corpus (360 EN docs) + spli
                             provenance: datasets/text/PROVENANCE_TEXT.csv)
 models/artifacts/           Trained artifacts (gitignored): joblib vectorizer/SVM, keras CNN,
                             summarizer checkpoints (vit5_v1, soups, mT5, pretrained baselines)
-runs/                       Per-experiment metrics (E0b, E1, E-U0/U2 …)
+runs/                       Per-experiment metrics (E0b, E1, E-U0/U2 …) — gitignored;
+                            the headline numbers are snapshotted in the tables above
 tests/                      pytest suite — map in tests/system.md
 requirements.txt            Pinned dependencies (verified in .venv)
 ```
