@@ -211,12 +211,17 @@ def summarize_abstractive(text: str, k: int | None = None,
             "compression": {"original_sentences": n_in, "kept": None}}
 
 
-def summarize(text: str, mode: str | None = None, k: int | None = None) -> dict:
-    """Dispatch by engine mode; defaults from configs/summary.yaml."""
+def summarize(text: str, mode: str | None = None, k: int | None = None,
+              checkpoint: str | None = None) -> dict:
+    """Dispatch by engine mode; defaults from configs/summary.yaml.
+
+    ``checkpoint`` optionally overrides the abstractive model (a
+    models/artifacts/ dir name) when mode is "abstractive".
+    """
     chosen = mode or paths.load_config("summary").get(
         "default_mode", "extractive")
     if chosen == "extractive":
         return summarize_extractive(text, k=k)
     if chosen == "abstractive":
-        return summarize_abstractive(text, k=k)
+        return summarize_abstractive(text, k=k, checkpoint=checkpoint)
     raise ValueError(f"unknown summary mode: {chosen!r}")

@@ -138,14 +138,39 @@ DEMO_ABSTRACTIVE_TEXT = (
 )
 
 
-def demo_record(mode, k_sum):
+def available_checkpoints():
+    """models/artifacts/ dirs that can actually run the abstractive engine
+    (config + weights + tokenizer present) — UI model picker lists only these."""
+    art = ROOT / "models" / "artifacts"
+    if not art.is_dir():
+        return []
+    found = []
+    for d in sorted(art.iterdir()):
+        if not d.is_dir() or d.name.startswith(".") or d.name.endswith("_copy"):
+            continue
+        has_cfg = (d / "config.json").is_file()
+        has_w = ((d / "model.safetensors").is_file()
+                 or (d / "pytorch_model.bin").is_file())
+        has_tok = ((d / "tokenizer.json").is_file()
+                   or (d / "spiece.model").is_file()
+                   or (d / "tokenizer_config.json").is_file())
+        if has_cfg and has_w and has_tok:
+            found.append(d.name)
+
+    def rank(n):
+        return 0 if n == "vit5_v1" else (1 if n == "vit5_soup_0.5_v1" else 2)
+
+    return sorted(found, key=lambda n: (rank(n), n))
+
+
+def demo_record(mode, k_sum, model=None):
     """Sample record following the sidebar choices (mode + sentence count),
     so every control does something while previewing the UI."""
     rec = json.loads(json.dumps(DEMO_RECORD))  # simple deep copy
     sm = rec["summary"]
     if mode == "abstractive":
         rec["summary"] = {"engine": "abstractive", "text": DEMO_ABSTRACTIVE_TEXT,
-                          "model": "summarizer_mt5",
+                          "model": model or "summarizer_mt5",
                           "compression": {"original_sentences": 21,
                                           "kept": None}}
     else:
@@ -290,19 +315,6 @@ def inject_css(dark: bool):
       /* ---- toggle ---- */
       div[data-testid="stToggle"] span[role="switch"] {{
           background:#5865f2 !important; }}
-      /* ---- marquee band (Blurple, Discord-style) ---- */
-      .rcn-marquee {{
-          background:linear-gradient(90deg,#5865f2,#ec48bd);
-          border-radius:40px; padding:14px 0; overflow:hidden;
-          white-space:nowrap; position:relative; }}
-      .rcn-marquee span {{
-          display:inline-block; padding-left:100%;
-          animation:rcn-scroll 22s linear infinite;
-          font-family:'Space Grotesk',sans-serif; font-weight:800;
-          font-size:20px; color:#fff; letter-spacing:.04em; }}
-      .rcn-marquee:hover span {{ animation-play-state:paused; }}
-      @keyframes rcn-scroll {{ 0% {{ transform:translateX(0); }}
-          100% {{ transform:translateX(-100%); }} }}
       /* ---- feature card grid ---- */
       .rcn-feature {{
           background:{surface}; border:1px solid {hairline};
@@ -836,13 +848,28 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("### ⚙️ Summary options")
     mode_lbl = st.segmented_control(
-        "Mode", ["Auto", "Extract sentences", "Generate new text"],
-        default="Auto",
+        "Mode", ["Extract sentences", "Generate new text"],
+        default="Extract sentences",
         help="“Generate new text” needs the small local model; if it is missing "
              "it falls back to sentence extraction.")
-    MODE_MAP = {"Auto": None, "Extract sentences": "extractive",
+    MODE_MAP = {"Extract sentences": "extractive",
                 "Generate new text": "abstractive"}
     k_sum = st.slider("Summary sentences", 1, 7, 3)
+
+    ckpts = available_checkpoints()
+    model_lbl = None
+    if mode_lbl == "Generate new text":
+        if ckpts:
+            default_i = ckpts.index("vit5_v1") if "vit5_v1" in ckpts else 0
+            model_lbl = st.selectbox(
+                "Summarizer model", ckpts, index=default_i,
+                help="Local checkpoint that writes the new text. Only models "
+                     "that load on this machine are listed; vit5_v1 is the "
+                     "default.")
+        else:
+            st.caption("⚠️ No local summarizer model found under "
+                       "models/artifacts/ — will fall back to sentence "
+                       "extraction.")
 
     can_go = (use_demo
               or use_batch
@@ -872,7 +899,8 @@ def skeleton_block(rows: int = 3, width_pct: tuple = (72, 95, 60)):
 # --------------------------------------------------------------- analysis ---
 if go:
     if use_demo:
-        st.session_state["rec"] = demo_record(MODE_MAP[mode_lbl], k_sum)
+        st.session_state["rec"] = demo_record(MODE_MAP[mode_lbl], k_sum,
+                                              model_lbl)
         st.toast("Showing sample data 🧪", icon="🧪")
     elif use_batch:
         fdir = Path(folder_path)
@@ -924,8 +952,10 @@ if go:
         st.sidebar.warning("Upload a file or paste text first.")
     else:
         # Show the skeleton IMMEDIATELY before the seam runs (abstractive can take 5-25s)
-        st.markdown("**Analyzing document...**")
-        skeleton_block(rows=5)
+        ph = st.empty()
+        with ph.container():
+            st.markdown("**Analyzing document...**")
+            skeleton_block(rows=5)
         c1, c2, c3 = st.columns(3)
         for c in (c1, c2, c3):
             with c:
@@ -949,12 +979,14 @@ if go:
                     tmp_path = Path(tmp.name)
                 rec = understand_file(tmp_path,
                                       summary_mode=MODE_MAP[mode_lbl],
-                                      summary_k=k_sum)
+                                      summary_k=k_sum,
+                                      summary_checkpoint=model_lbl)
                 rec["source"] = up.name  # real name instead of the temp path
             else:
                 rec = understand(pasted, source="(pasted text)",
                                  summary_mode=MODE_MAP[mode_lbl],
-                                 summary_k=k_sum)
+                                 summary_k=k_sum,
+                                 summary_checkpoint=model_lbl)
             st.session_state["rec"] = rec
             # Session history: keep the 8 most recent analyses
             hist = st.session_state.setdefault("history", [])
@@ -974,6 +1006,7 @@ if go:
         finally:
             if tmp_path is not None:
                 tmp_path.unlink(missing_ok=True)
+            ph.empty()  # kết quả render bên dưới — không để skeleton treo mãi
 
 rec = st.session_state.get("rec")
 is_demo = bool(rec) and str(rec.get("source", "")).startswith("(sample data)")
@@ -1313,23 +1346,9 @@ if rec:
             st.divider()
             st.caption("All algorithms run offline on this machine — TF-IDF, LDA, PCA, K-Means, CNN, SVM, MMR, T5.")
 
-    with st.expander("🔧 Technical details (for demo/defense)"):
-        st.json(rec, expanded=False)
 else:
-    st.markdown("""<div class='rcn-hero'><h1>RCN STUDIO</h1>
-      <p><b>Every document, one clear view.</b> Load a file or paste text in the
-      sidebar and press “Analyze”. Not ready yet? Pick “Sample data”
-      to preview the whole interface.</p>
-      </div>""", unsafe_allow_html=True)
-    st.write("")
-    st.markdown("<div class='rcn-marquee'><span>"
-                "CLASSIFY &nbsp;·&nbsp; KEYWORDS &nbsp;·&nbsp; TOPICS "
-                "&nbsp;·&nbsp; FIELDS &nbsp;·&nbsp; SUMMARY "
-                "&nbsp;·&nbsp; 100% OFFLINE &nbsp;·&nbsp; "
-                "CLASSIFY &nbsp;·&nbsp; KEYWORDS &nbsp;·&nbsp; TOPICS "
-                "&nbsp;·&nbsp; FIELDS &nbsp;·&nbsp; SUMMARY "
-                "&nbsp;·&nbsp; 100% OFFLINE &nbsp;·&nbsp; "
-                "</span></div>", unsafe_allow_html=True)
+    st.markdown("<div class='rcn-hero'><h1>RCN STUDIO</h1></div>",
+                unsafe_allow_html=True)
     st.write("")
     c1, c2, c3 = st.columns(3)
     feats = [
@@ -1352,7 +1371,3 @@ else:
     st.write("")
     st.markdown("#### 🧠 ML/DL algorithms")
     algo_panel()
-
-st.markdown("---")
-st.caption("RCN Studio · Every document, one clear view · JSON/Markdown output "
-           "identical to the CLI.")

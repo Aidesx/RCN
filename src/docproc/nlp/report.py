@@ -118,8 +118,14 @@ def _router_image(image) -> dict:
 
 def understand(text: str, source: str = "inline", k_keywords: int = 10,
                k_topics: int | None = None, summary_mode: str | None = None,
-               summary_k: int | None = None) -> dict:
-    """Full understanding record for a raw text string."""
+               summary_k: int | None = None,
+               summary_checkpoint: str | None = None) -> dict:
+    """Full understanding record for a raw text string.
+
+    ``summary_checkpoint`` optionally names a models/artifacts/ dir to use
+    for abstractive summarization (UI model picker), overriding the
+    configs/summary.yaml selection.
+    """
     structure = analyze_structure(text)
     keywords = extract_keywords(text, k=k_keywords)
     topics = extract_topics(text, k=k_topics)
@@ -137,7 +143,8 @@ def understand(text: str, source: str = "inline", k_keywords: int = 10,
         "fields": fields,
     }
     try:
-        record["summary"] = summarize(text, mode=summary_mode, k=summary_k)
+        record["summary"] = summarize(text, mode=summary_mode, k=summary_k,
+                                      checkpoint=summary_checkpoint)
     except NotImplementedError:
         # D2 graceful degradation: requested engine unavailable -> extractive.
         record["summary"] = summarize_extractive(text, k=summary_k)
@@ -148,7 +155,8 @@ def understand(text: str, source: str = "inline", k_keywords: int = 10,
 def understand_file(path, k_keywords: int = 10,
                     k_topics: int | None = None,
                     summary_mode: str | None = None,
-                    summary_k: int | None = None) -> dict:
+                    summary_k: int | None = None,
+                    summary_checkpoint: str | None = None) -> dict:
     """Dispatch by file type per 02 §3; classification-only for images/scans."""
     p = Path(path)
     detection = detect_file_type(p)
@@ -184,7 +192,8 @@ def understand_file(path, k_keywords: int = 10,
 
     record = understand(text, source=str(p), k_keywords=k_keywords,
                         k_topics=k_topics, summary_mode=summary_mode,
-                        summary_k=summary_k)
+                        summary_k=summary_k,
+                        summary_checkpoint=summary_checkpoint)
     record["file_type"] = detection.file_type
     return record
 

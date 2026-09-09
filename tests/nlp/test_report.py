@@ -52,7 +52,7 @@ class TestSummaryIntegration:
     def test_abstractive_falls_back_to_extractive(self, monkeypatch):
         from docproc.nlp import report
 
-        def boom(text, mode=None, k=None):
+        def boom(text, mode=None, k=None, checkpoint=None):
             raise NotImplementedError("no checkpoint")
 
         monkeypatch.setattr(report, "summarize", boom)

@@ -5,6 +5,9 @@ datasets/splits/manifest.pre_repair_backup.csv
 models/artifacts/
 runs/
 benchmarks/results/
+# CLI outputs written next to the analyzed file (rescan skips them anyway)
+*.understanding.json
+*.understanding.md
 __pycache__/
 *.pyc
 .venv/
