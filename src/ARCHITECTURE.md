@@ -10,7 +10,7 @@ here. Last synced 2026-09-09 against the working tree.
 input file / text
    │
    ├─ io.detect_file_type()     magic bytes + scan probe → kind of file
-   ├─ io.extract_text()         deterministic text extraction per format (no OCR)
+   ├─ io.extract_text()         deterministic text extraction per format (text-layer input)
    │
    ├─ report._router_text()     text → SVM label        (advisory)
    ├─ report._router_image()    image/scan → CNN label  (advisory)
@@ -41,8 +41,8 @@ ARTIFACTS_DIR`). Everything else imports from here — no hardcoded paths anywhe
 | File | Contents | Role |
 | --- | --- | --- |
 | `detect.py` | `detect_file_type()` — magic bytes + text-format sniff + scanned-PDF character probe; structured errors `DocumentIOError` / `ParseError` / `UnsupportedFormatError` | decides the branch: text / image / scan |
-| `parsers.py` | `extract_text()` dispatches `_extract_pdf / _extract_docx / _extract_markdown / _extract_html` | deterministic text extraction, no OCR |
-| `render.py` | `render_pdf_pages()` (PDF → images, default dpi), `extract_embedded_images_pdf()` | feeds the image branch — pages are *classified*, never read |
+| `parsers.py` | `extract_text()` dispatches `_extract_pdf / _extract_docx / _extract_markdown / _extract_html` | deterministic text extraction from text-layer input |
+| `render.py` | `render_pdf_pages()` (PDF → images, default dpi), `extract_embedded_images_pdf()` | feeds the image branch — pages are *classified* in the current build |
 
 ## `preprocess/` — model inputs
 
@@ -103,5 +103,6 @@ Routing contract: the router is **advisory**. If an artifact is missing the labe
 1. **Deterministic / seeded** — same input ⇒ same output (seed 42 everywhere).
 2. **One seam** — CLI, UI and tests all go through `nlp.report.understand()`.
 3. **Understanding-first** — L1–L3 are the product; the router is a label.
-4. **No OCR, no cloud LLM** — a local <7B seq2seq model is the only generative component.
+4. **Local and deterministic** — a local <7B seq2seq model is the only generative component in
+   the current build.
 5. **Config, not constants** — hyperparameters live in `configs/`, not in code.

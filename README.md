@@ -2,12 +2,12 @@
 
 **RCN** is an offline document-understanding toolkit for Vietnamese and English text. Point it at a
 text, a file, or a folder and it returns a layered understanding record — structure, keywords,
-topics, fields, and summary. No OCR, no cloud, no external LLM: everything runs locally and is
-deterministic (seeded) for the same input.
+topics, fields, and summary. Everything runs locally and is deterministic (seeded) for the same
+input.
 
-Scanned pages and photos are **classified only** (which kind of document they are) and are never
-read. Summarization is extraction-first, with an optional small local seq2seq model for
-paraphrased summaries and automatic fallback when the model is absent.
+Scanned pages and photos are **classified only** (which kind of document they are); the current
+build does not read their content. Summarization is extraction-first, with an optional small
+local seq2seq model for paraphrased summaries and automatic fallback when the model is absent.
 
 ## Why RCN?
 
@@ -15,8 +15,9 @@ paraphrased summaries and automatic fallback when the model is absent.
   five levels: `structure` (L1) → `keywords` (L2) → `topics` (L3) → `fields` (L4) → `summary` (L5).
 - **Offline and private.** All processing happens on your machine. The seq2seq summarizer is a
   sub-7B model run locally via `transformers`; scanned pages never leave your disk.
-- **No OCR.** Text-layer PDFs and office documents are parsed directly; scanned pages are
-  rendered and *classified* by document type (receipt, invoice, letter, …) — not transcribed.
+- **Text-layer first.** Text-layer PDFs and office documents are parsed directly; scanned pages are
+  rendered and *classified* by document type (receipt, invoice, letter, …) rather than
+  transcribed.
 - **Honest about missing pieces.** If a model artifact is absent, the router says `unavailable`
   and the rest of the pipeline still completes instead of failing or guessing.
 - **Deterministic.** Every random step is seeded (42); same input → same output.
@@ -103,7 +104,7 @@ A human-readable Markdown report is rendered from the same record via
 input (text / pdf / docx / md / html / png / jpg)
    │
    ├─ io.detect          file type via magic bytes + scanned-PDF probe
-   ├─ text branch  → parsers extract text deterministically (no OCR)
+   ├─ text branch  → parsers extract text directly from the file
    ├─ image branch → render page / image → classify document type only
    │
    └─ nlp layers → L1 structure → L2 keywords → L3 topics → L4 fields → L5 summary
@@ -142,22 +143,22 @@ macro-F1 ≥ 0.5):
 
 The text classes are well-separated in TF-IDF space, which explains the near-perfect score; the
 image CNN is a modest but real improvement over the majority baseline — a deliberate, honest
-boundary for a course project on scanned-document *routing without OCR*.
+boundary for a course project on scanned-document *routing*.
 
 **Summarizer benchmark** — 12 Vietnamese news articles with human reference summaries (eval set
 bundled in `benchmarks/data/`), generated with the exact demo config (beam 4, max 128 tokens,
-CPU). 5 of the 12 docs are excluded from the official table because they overlap the training set
-of the community `vit5-base-vietnews` checkpoint (that model scores R2 = 1.0000 on them — it has
-memorized them); ROUGE-2 is reported on the 7 clean docs:
+CPU). Entries that overlap a training corpus used by one of the compared checkpoints are flagged
+`clean: false` in the eval file (a memorization guard) and excluded from the official table;
+ROUGE-2 is reported on the clean subset:
 
 | Model | Kind | ROUGE-2 | Copy 5-gram | #-halluc. |
 | --- | --- | --- | --- | --- |
 | `vit5_soup_0.7_v1` | weight soup (experimental) | 0.289 | 52% | 0% |
 | `vit5_soup_0.7_v2` | weight soup (experimental) | 0.266 | 46% | 0% |
 | **`vit5_v1`** ⭐ | fine-tuned from VietAI/vit5-base | 0.255 | **44%** | **0%** |
-| `vit5_soup_0.5_v1` | soup v1 ⊕ VietNews @0.5 | 0.231 | 48% | 0% |
+| `vit5_soup_0.5_v1` | weight soup @0.5 (v1 blend) | 0.231 | 48% | 0% |
 | `summarizer_mt5` | mT5 XLSum multilingual (zero-shot) | 0.211 | 39% | 0% |
-| `vit5_base_vietnews` | community checkpoint (HF) | 0.135 | 48% | 0% |
+| `vit5_base_vietnews` | pretrained baseline | 0.135 | 48% | 0% |
 | `vit5_base_original` | VietAI/vit5-base (untrained) | 0.089 | 12% | **25%** |
 
 Reading the table: fine-tuning matters — the untrained base scores 0.089 and invents numbers in
@@ -182,15 +183,15 @@ and runs on CPU or GPU (same script, Colab-friendly):
 
 ```bash
 python scripts/train_summarizer.py \
-  --train rcn-aux/datasets/summary/xlsum_auto_train.jsonl \
-  --val   rcn-aux/datasets/summary/xlsum_auto_val.jsonl \
+  --train path/to/train.jsonl \
+  --val   path/to/val.jsonl \
   --epochs 2 --batch-size 8 --base-model VietAI/vit5-base
 ```
 
-The Vietnamese corpora and the Colab recipes that produced the shipped checkpoints (`vit5_v1`,
-`vit5_v2`, the weight-soup family) live in the sibling workspace `rcn-aux/` (not versioned).
+The Vietnamese corpora and the recipes that produced the shipped checkpoints (`vit5_v1`,
+`vit5_v2`, the weight-soup family) are kept outside this repository (not versioned).
 Weight soup = element-wise interpolation between two fine-tuned checkpoints,
-`θ = (1−α)·θ₁ + α·θ₂`, e.g. `vit5_soup_0.5_v1` = v1 ⊕ VietNews at α = 0.5.
+`θ = (1−α)·θ₁ + α·θ₂`, e.g. `vit5_soup_0.5_v1` = a 0.5 blend of `vit5_v1`.
 
 ## Repository layout
 
@@ -211,7 +212,7 @@ scripts/                    understand_text.py (CLI) · app.py (RCN Studio) · t
 datasets/                   raw images (~700) + text corpus (360 EN docs) + splits (gitignored;
                             provenance: datasets/text/PROVENANCE_TEXT.csv)
 models/artifacts/           Trained artifacts (gitignored): joblib vectorizer/SVM, keras CNN,
-                            summarizer checkpoints (vit5_v1, soups, mT5, community baselines)
+                            summarizer checkpoints (vit5_v1, soups, mT5, pretrained baselines)
 runs/                       Per-experiment metrics (E0b, E1, E-U0/U2 …)
 tests/                      pytest suite — map in tests/system.md
 requirements.txt            Pinned dependencies (verified in .venv)

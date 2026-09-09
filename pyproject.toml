@@ -1,7 +1,7 @@
 [project]
 name = "rcn-docproc"
 version = "0.1.0"
-description = "Narrow AI document processing project (no OCR)"
+description = "Narrow AI document processing project"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -1,9 +1,9 @@
 # RCN — Architecture
 
-RCN is an offline, OCR-free document-understanding pipeline for Vietnamese and English. It turns
+RCN is an offline document-understanding pipeline for Vietnamese and English. It turns
 a text, file, or folder into a layered record — **L1 structure → L2 keywords → L3 topics → L4
 fields → L5 summary** — plus an advisory document-type label. This document describes how the
-pieces fit together, what is actually trained and shipped, and what is explicitly out of scope.
+pieces fit together and what is actually trained and shipped.
 
 ## At a glance
 
@@ -18,15 +18,15 @@ pieces fit together, what is actually trained and shipped, and what is explicitl
 | L4 fields | per-class regex schemas, `configs/fields.yaml` overrides, value normalization | shipped |
 | L5 summary | extractive MMR (λ=0.7) · abstractive ViT5/mT5 (<7B) with fallback | shipped |
 | 224×224 MobileNetV2 finetune arm | `configs/finetune.yaml`, `finetune_tensor()` | **explored, not shipped** |
-| OCR | — | **explicitly out of scope** |
+| OCR | — | not implemented (scanned pages are rendered and classified, not read) |
 
 ## Design principles
 
 - **Understanding-first.** L1–L3 are the product; the router label is advisory metadata and never
   fails the pipeline.
-- **No OCR, no cloud.** Text-layer documents are parsed; scans/photos are rendered and
-  classified only. The only model bigger than a vectorizer is a sub-7B seq2seq summarizer that
-  runs locally through `transformers`.
+- **Local and text-layer-first.** Text-layer documents are parsed directly; scans/photos are
+  currently rendered and classified only. The only model bigger than a vectorizer is a sub-7B
+  seq2seq summarizer that runs locally through `transformers`.
 - **One seam.** `docproc.nlp.report.understand()` / `understand_file()` serve the CLI, the
   Streamlit app, and the tests identically.
 - **Deterministic.** All randomness is seeded (42): same input → same JSON record.
@@ -129,36 +129,34 @@ abstractive:
 for artifacts whose `tokenizer.json` predates current `transformers`.
 
 **Self-trained checkpoints** (Vietnamese news summarization, fine-tuned from `VietAI/vit5-base`
-in Google-Colab GPU batches; recipes in the sibling `rcn-aux/upload_gpu/` workspace):
+in Google-Colab GPU batches; training recipes are archived with the artifacts):
 
-| Artifact | Recipe | Benchmark ROUGE-2 (7 clean docs) |
+| Artifact | Recipe | Benchmark ROUGE-2 (clean subset) |
 | --- | --- | --- |
 | `vit5_v1` | ~127k Vietnamese pairs, 2 epochs, full fine-tune | 0.255 |
-| `vit5_v2` | overnight low-LR rerun (degraded, extractive-leaning) | 0.100 |
+| `vit5_v2` | low-LR rerun (extractive-leaning) | 0.100 |
 | `vit5_soup_0.5_v1` | θ = (1−α)·vit5_v1 + α·vietnews, α = 0.5 | 0.231 |
 | `vit5_soup_0.3/0.7_v1/v2` | same recipe, α = 0.3 / 0.7, multiple versions | 0.238–0.289 |
 | `vit5_v1_fp16` | half-precision copy of `vit5_v1` (GPU demo) | — |
 
-Community baselines downloaded from the Hub (`vit5_base_vietnews_summarization`,
-`summarizer_mt5`, `vit5_base_original`, and the Sep-2026 HF candidates) are kept in
-`models/artifacts/` as comparison points for the benchmark. The soup experiments at α=0.7 score
-highest numerically but were exploratory blends without a recorded recipe; the benchmark
-recommends `vit5_v1` as the demo checkpoint. Full methodology and per-doc numbers:
-[benchmarks/RESULTS.md](benchmarks/RESULTS.md).
+Other checkpoints kept in `models/artifacts/` (`vit5_base_vietnews_summarization`,
+`summarizer_mt5`, `vit5_base_original`, …) serve as comparison points for the benchmark. The
+soup experiments at α=0.7 score highest numerically but were exploratory blends without a
+recorded recipe; the benchmark recommends `vit5_v1` as the demo checkpoint. Full methodology and
+per-doc numbers: [benchmarks/RESULTS.md](benchmarks/RESULTS.md).
 
 ## Training data & splits
 
 - **Image corpus** — ~700 page images across the six classes, assembled via
   `scripts/download_rvlcdip_subset.py`; **text corpus** — 360 English business/news documents
   generated with `scripts/make_text_corpus.py` (the understanding layers are language-agnostic
-  with bilingual stopwords; Vietnamese coverage comes from the bundled benchmark eval set
-  (`benchmarks/data/`) and a large Vietnamese corpus kept locally in `models/artifacts/`
-  (`demo_vi_internal_memo_summaries.jsonl`, provenance under review)).
+  with bilingual stopwords; Vietnamese coverage comes from the bundled benchmark eval set in
+  `benchmarks/data/`).
 - Split 70/15/15 (train/val/test) with a manifest (`datasets/splits/manifest.csv`), leak-checked.
 - Everything under `datasets/` is gitignored; exact provenance is recorded in
   `datasets/text/PROVENANCE_TEXT.csv`.
-- Summarization corpora (XLSum-VI, VietNews, XSum/CNN-DailyMail, …) live in the sibling
-  workspace `rcn-aux/datasets/summary/`, not in this repo.
+- Summarization corpora (XLSum-VI, VietNews, XSum/CNN-DailyMail, …) live outside this
+  repository (not versioned).
 
 ## Tests & benchmark
 
@@ -173,12 +171,13 @@ Test roles and conventions: [tests/system.md](tests/system.md). Benchmark result
 
 ## Honest status
 
-- **Shipped in v1:** full L1–L5 pipeline over text documents; scanned pages and photos
-  classified (not OCR'd); CLI + Streamlit UI; deterministic golden-tested IO; the router models
-  above; a fine-tuned Vietnamese abstractive summarizer with recorded recipes.
+- **Shipped:** full L1–L5 pipeline over text documents; scanned pages and photos classified by
+  type; CLI + Streamlit UI; deterministic golden-tested IO; the router models above; a
+  fine-tuned Vietnamese abstractive summarizer with recorded recipes.
 - **Explored, deliberately not shipped:** the 224×224 MobileNetV2 finetune arm exists only as
   configuration (`configs/finetune.yaml`) and a preprocessing entry point (`finetune_tensor()`);
-  overnight training variants (`vit5_v2`) and unreported soup blends are archived as artifacts
+  low-LR rerun variants (`vit5_v2`) and unreported soup blends are archived as artifacts
   but are not demo defaults.
-- **Out of scope:** OCR of handwritten/scanned content, cloud APIs, non-deterministic LLM
-  pipelines, and multilingual document understanding beyond the two languages the corpus covers.
+- **Not implemented yet:** OCR of handwritten/scanned content, cloud APIs, non-deterministic
+  LLM pipelines, and multilingual document understanding beyond the two languages the corpus
+  covers.
