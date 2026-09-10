@@ -1096,10 +1096,10 @@ if rec:
         type_card(rec.get("doc_type", {}))
         st.stop()
 
-    tab_sm, tab_ov, tab_kw, tab_tx, tab_tp, tab_fd, tab_al = st.tabs(
+    tab_sm, tab_ov, tab_kw, tab_tp, tab_fd, tab_al = st.tabs(
         ["📝 Summary", "📊 Overview",
          f"🔑 Keywords ({len(rec.get('keywords') or [])})",
-         "📃 Source text", "🧩 Topics",
+         "🧩 Topics",
          f"🗂 Extracted fields ({len((rec.get('fields') or {}).get('fields') or {})})",
          "🧠 Algorithms"],
         default="📝 Summary")
@@ -1158,19 +1158,6 @@ if rec:
             st.write("**Nothing stands out.** No distinctive phrases were found "
                      "in this document.")
             demo_cta("Longer documents produce clearer keywords.")
-
-    with tab_tx:
-        # Rebuild the source from L1 (exact sentence/paragraph order the seam saw)
-        paras = ((rec.get("structure") or {}).get("paragraphs") or [])
-        if paras:
-            full_text = "\n\n".join(
-                " ".join(p.get("sentences", [])) for p in paras)
-            st.markdown(
-                f"<div style='font-size:15.5px;line-height:1.9'>"
-                f"{highlight_text(full_text, rec.get('keywords') or [], st.session_state.get('dark', True))}"
-                f"</div>", unsafe_allow_html=True)
-        else:
-            st.info("No source text to show (this document was classification-only).")
 
     with tab_tp:
         tp = rec.get("topics") or {}
@@ -1276,6 +1263,20 @@ if rec:
         if sm.get("engine_fallback"):
             st.warning("⚠️ The abstractive model is not installed — fell back to "
                        "sentence extraction; the result is still complete.")
+
+        # ---- Source text (shown right here so it is always visible) ----
+        paras = ((rec.get("structure") or {}).get("paragraphs") or [])
+        st.divider()
+        st.markdown("#### 📃 Source text")
+        if paras:
+            full_text = "\n\n".join(
+                " ".join(p.get("sentences", [])) for p in paras)
+            st.markdown(
+                f"<div style='font-size:15.5px;line-height:1.9'>"
+                f"{highlight_text(full_text, rec.get('keywords') or [], st.session_state.get('dark', True))}"
+                f"</div>", unsafe_allow_html=True)
+        else:
+            st.info("No source text to show (this document was classification-only).")
 
     with tab_al:
             st.markdown("**A visual chart for each algorithm in the pipeline:**")
