@@ -792,6 +792,30 @@ def highlight_text(text: str, keywords: list, dark: bool) -> str:
     return "".join(out)
 
 
+_WORD_RE = re.compile(r"\w+", re.UNICODE)
+
+
+def _tokens_norm(s: str) -> set:
+    return set(_WORD_RE.findall(s.lower()))
+
+
+def _sent_in_selection(sent: str, sel_sets: list,
+                       min_ratio: float = 0.7) -> bool:
+    """True when a displayed sentence is (mostly) one of the kept ones.
+    Tolerant to tiny punctuation / join differences; exact on real data."""
+    st_set = _tokens_norm(sent)
+    if not st_set:
+        return False
+    for ss in sel_sets:
+        if not ss:
+            continue
+        inter = len(st_set & ss)
+        if inter / len(st_set) >= min_ratio and (
+                len(st_set) >= 3 or st_set == ss):
+            return True
+    return False
+
+
 # ------------------------------------------------------------------ sidebar --
 _THEME_FILE = ROOT / ".rcn_theme"
 
@@ -1269,12 +1293,30 @@ if rec:
         st.divider()
         st.markdown("#### 📃 Source text")
         if paras:
-            full_text = "\n\n".join(
-                " ".join(p.get("sentences", [])) for p in paras)
+            dark_on = st.session_state.get("dark", True)
+            sel_sets = ([_tokens_norm(s["text"]) for s in sentences]
+                        if engine == "extractive" and sentences else [])
+            sel_bg = ("rgba(250,204,21,.30)" if dark_on
+                      else "rgba(250,204,21,.45)")
+            rows = []
+            for p in paras:
+                buf = []
+                for sent in p.get("sentences", []):
+                    h = highlight_text(sent, rec.get("keywords") or [],
+                                       dark_on)
+                    if _sent_in_selection(sent, sel_sets):
+                        h = (f"<mark style='background:{sel_bg};"
+                             f"color:inherit;border-radius:6px;"
+                             f"padding:1px 3px'>{h}</mark>")
+                    buf.append(h)
+                rows.append(" ".join(buf))
             st.markdown(
                 f"<div style='font-size:15.5px;line-height:1.9'>"
-                f"{highlight_text(full_text, rec.get('keywords') or [], st.session_state.get('dark', True))}"
-                f"</div>", unsafe_allow_html=True)
+                f"{'<br><br>'.join(rows)}</div>",
+                unsafe_allow_html=True)
+            if sel_sets:
+                st.caption("🟡 Highlighted = sentences kept in the summary "
+                           "(extractive mode).")
         else:
             st.info("No source text to show (this document was classification-only).")
 
