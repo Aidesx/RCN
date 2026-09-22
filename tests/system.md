@@ -50,37 +50,3 @@ tests/
     ├── test_features.py       highlighting, coherence chart, history, batch + CSV
     └── test_e2e_core.py       E2E core flows (extractive/abstractive/upload/batch)
 ```
-
-## Running
-
-The corpora are committed (see the README "Sample data"), so a fresh clone runs directly:
-
-```bash
-# From the repo root RCN/
-python -m pytest -q              # default: 177 FUNCTIONAL tests (no trained-model artifacts needed)
-python -m pytest -q -m model     # 12 MODEL-DEPENDENT tests (SVM / keras CNN / seq2seq checkpoint)
-python -m pytest tests/io/ -q    # just ingestion
-```
-
-## Role split (2026-09-08)
-
-- **Default suite (`pytest -q`) = functional.** L1–L5, IO, dataset, text-classifier logic, UI
-  chrome — deterministic and green even on a machine with no trained artifacts (13 tests read
-  the committed corpora; the other 164 are self-contained or use tmp fixtures)
-  (`pyproject.toml` sets `addopts = -m "not model"`).
-- **`pytest -m model` = model-dependent.** Needs the real artifacts:
-  `tests/ui/*` (UI runs the *real* core: SVM + abstractive checkpoint),
-  `tests/training/test_harness.py` (trains the keras CNN), the `TestRouterGate` group (4 tests,
-  real SVM), `test_abstractive_smoke_when_checkpoint_present`, and
-  `test_e1_report_matches_recorded_metrics`.
-- **Model quality is not measured by unit tests.** Summarizer quality has its own benchmark —
-  ROUGE-2 / verbatim-copy / number-hallucination on a bundled 12-document Vietnamese eval set;
-  results and reproducer live in `benchmarks/` (see `benchmarks/RESULTS.md`).
-
-## Conventions
-
-- **Deterministic** — every test seeds 42; same input → same output.
-- **Golden-tested** — file IO is compared against `.expected.txt` fixtures; image tensors are
-  compared pixel-exact against frozen `.npy` arrays.
-- **UI tests** use `streamlit.testing.v1.AppTest` — no browser required.
-- **Fallback-safe** — abstractive tests self-skip when the checkpoint is missing.

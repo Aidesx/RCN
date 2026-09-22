@@ -2,27 +2,16 @@
 
 **RCN** is an offline document-understanding toolkit for Vietnamese and English text. Point it at a
 text, a file, or a folder and it returns a layered understanding record — structure, keywords,
-topics, fields, and summary. Everything runs locally and is deterministic (seeded) for the same
+topics, fields, and summary. Everything runs locally and is deterministic for the same
 input.
 
-Scanned pages and photos are **classified only** (which kind of document they are); the current
-build does not read their content. Summarization is extraction-first, with an optional small
-local seq2seq model for paraphrased summaries and automatic fallback when the model is absent.
 
 ## Why RCN?
 
 - **Layered understanding, not just labels.** Every document becomes a structured record with
   five levels: `structure` (L1) → `keywords` (L2) → `topics` (L3) → `fields` (L4) → `summary` (L5).
-- **Offline and private.** All processing happens on your machine. The seq2seq summarizer is a
-  sub-7B model run locally via `transformers`; scanned pages never leave your disk.
-- **Text-layer first.** Text-layer PDFs and office documents are parsed directly; scanned pages are
-  rendered and *classified* by document type (receipt, invoice, letter, …) rather than
-  transcribed.
-- **Honest about missing pieces.** If a model artifact is absent, the router says `unavailable`
-  and the rest of the pipeline still completes instead of failing or guessing.
-- **Deterministic.** Every random step is seeded (42); same input → same output.
-- **Two surfaces, one seam.** The Streamlit app ("RCN Studio") and the CLI share a single
-  `understand()` entry point, so the UI and the terminal never disagree.
+- **Offline and private.** All processing happens on your machine. 
+- **Text-layer first.** Text-layer PDFs and office documents are parsed directly
 
 ## Quickstart
 
@@ -44,7 +33,7 @@ The corpora ship **inside the repo** (see [Repository layout](#repository-layout
 clone runs out of the box. The `scripts/` generators (`make_text_corpus.py`,
 `download_rvlcdip_subset.py`, `build_*_manifest.py`) are kept for provenance and regeneration.
 
-Optional — download the multilingual seq2seq summarizer (needed only for abstractive mode):
+Optional — download the multilingual seq2seq summarizer:
 
 ```bash
 python scripts/download_summarizer.py
