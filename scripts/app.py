@@ -707,54 +707,34 @@ def chart_kmeans_algo():
     return fig
 
 
-# ML/DL algorithms used at each analysis step (shown in the UI).
+# ML/DL algorithms used at each analysis step (name + task shown in the UI).
 ALGOS = [
-    ("SVM", "e0b_svm", "Text classification",
-     "TF-IDF → LinearSVC; GridSearchCV picks hyperparameters (5-fold).",
-     "text_model_svm.joblib"),
-    ("CNN", "e1_cnn", "Scanned-image classification",
-     "Conv2D→MaxPool→Dense(softmax), trained on the RVL-CDIP subset.",
-     "runs/E1/best.keras"),
-    ("TF-IDF", "tfidf", "Keyword salience",
-     "score = tf × idf (idf over paragraphs) — keywords & vectorization.",
-     "text_vectorizer.joblib"),
-    ("LDA", "lda", "Topic grouping",
-     "Latent Dirichlet Allocation; k chosen by UMass coherence.",
-     "sklearn.decomposition"),
-    ("K-means + PCA", "km_pca", "Topic labels",
-     "Clusters keywords → one representative label per topic group.",
-     "sklearn.cluster"),
-    ("MMR", "mmr", "Extractive summary",
-     "score = λ·relevance − (1−λ)·redundancy; picks non-duplicate sentences.",
-     "docproc.nlp.summary"),
-    ("Seq2Seq T5", "t5", "Abstractive summary",
-     "Transformer vit5-base fine-tuned on Vietnamese corpora (offline).",
-     "vit5_v1"),
+    ("SVM", "Text classification"),
+    ("CNN", "Scanned-image classification"),
+    ("TF-IDF", "Keyword salience"),
+    ("LDA", "Topic grouping"),
+    ("K-means + PCA", "Topic labels"),
+    ("MMR", "Extractive summary"),
+    ("Seq2Seq T5", "Abstractive summary"),
 ]
 
 
 def algo_panel():
-    """Grid of the project ML/DL algorithm cards (real core data)."""
+    """Grid of the project ML/DL algorithm cards (name + task)."""
     dark = st.session_state.get("dark", True)
     card_bg = SURFACE_INDIGO if dark else "#ffffff"
     border = SURFACE_ONYX if dark else "#d7dbef"
     sub = "#a3a9d8" if dark else "#5a6189"
     rows_html = []
-    for name, key, task, desc, src in ALGOS:
+    for name, task in ALGOS:
         rows_html.append(f"""
         <div style='background:{card_bg};border:1px solid {border};
              border-radius:16px;padding:14px 16px;display:flex;
-             gap:12px;align-items:flex-start'>
-          <div style='min-width:74px;text-align:center'>
-            <div style='background:rgba(88,101,242,.18);color:{BRAND_ON};
-                 font-weight:700;border-radius:8px;padding:4px 6px;
-                 font-size:13px'>{name}</div>
-            <div style='font-size:10.5px;color:{sub};margin-top:3px'>{task}</div>
-          </div>
-          <div style='font-size:13px;line-height:1.55;color:{sub}'>
-            {desc}<br>
-            <code style='font-size:11px;color:{LINK_CYAN}'>{src}</code>
-          </div>
+             gap:12px;align-items:center'>
+          <div style='background:rgba(88,101,242,.18);color:{BRAND_ON};
+               font-weight:700;border-radius:8px;padding:5px 10px;
+               font-size:13px;white-space:nowrap'>{name}</div>
+          <div style='font-size:13px;line-height:1.45;color:{sub}'>{task}</div>
         </div>""")
     st.markdown("<div style='display:grid;grid-template-columns:1fr 1fr;"
                 "gap:10px'>" + "".join(rows_html) + "</div>",
