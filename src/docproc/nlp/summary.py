@@ -151,6 +151,15 @@ def _load_seq2seq(ref_str: str):
             raise
         tokenizer = T5TokenizerFast(tokenizer_file=str(tj),
                                     model_max_length=512)
+    # Some hand-built checkpoint dirs ship only tokenizer_config.json: the
+    # tokenizer then "loads" with special tokens as its whole vocabulary
+    # (e.g. 100 ids) and generate() silently returns "". The ViT5/mT5
+    # checkpoints used here have 36k/250k vocab, so a tiny vocabulary means
+    # the tokenizer files are missing. Treat it as unusable so the caller
+    # falls back to extractive (D2).
+    if tokenizer.vocab_size <= 1000:
+        raise ValueError(
+            "checkpoint tokenizer is incomplete (missing vocabulary files)")
     model = AutoModelForSeq2SeqLM.from_pretrained(ref_str)
     model.eval()
     return tokenizer, model

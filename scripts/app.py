@@ -151,9 +151,12 @@ def available_checkpoints():
         has_cfg = (d / "config.json").is_file()
         has_w = ((d / "model.safetensors").is_file()
                  or (d / "pytorch_model.bin").is_file())
+        # tokenizer_config.json alone only holds special tokens — a checkpoint
+        # with no real vocabulary must not be offered as runnable.
         has_tok = ((d / "tokenizer.json").is_file()
                    or (d / "spiece.model").is_file()
-                   or (d / "tokenizer_config.json").is_file())
+                   or ((d / "vocab.json").is_file()
+                       and (d / "merges.txt").is_file()))
         if has_cfg and has_w and has_tok:
             found.append(d.name)
 

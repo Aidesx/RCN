@@ -107,9 +107,11 @@ class TestDispatcher:
 
         from docproc import paths
 
-        ckpt = paths.ROOT / "models" / "artifacts" / "summarizer_mt5"
+        cfg = paths.load_config("summary").get("abstractive", {})
+        name = cfg.get("finetuned_checkpoint") or "summarizer_mt5"
+        ckpt = paths.ROOT / "models" / "artifacts" / name
         if not (ckpt / "config.json").exists():
-            pytest.skip("summarizer checkpoint not downloaded")
+            pytest.skip(f"summarizer checkpoint '{name}' not downloaded")
         from docproc.nlp.summary import summarize_abstractive
 
         out = summarize_abstractive(VIET + " " + SAMPLE)

@@ -164,12 +164,11 @@ Reading the table: fine-tuning matters — the untrained base scores 0.089 and i
 (soup 0.7 v1/v2, `vit5_v1`) is statistically indistinguishable (paired Wilcoxon p > 0.26).
 **Recommended demo checkpoint: `vit5_v1`** — comparable ROUGE-2, the lowest verbatim-copy rate
 in the top group (real paraphrase, not extraction), zero number hallucination and ~9 s/doc on
-CPU. The shipped `configs/summary.yaml` still points at `vit5_soup_0.5_v1`; switch it for a demo
-with the recommended checkpoint:
+CPU. The shipped `configs/summary.yaml` already selects it:
 
 ```yaml
 abstractive:
-  finetuned_checkpoint: vit5_v1   # currently: vit5_soup_0.5_v1
+  finetuned_checkpoint: vit5_v1
 ```
 
 Methodology, the full per-doc data and the one-command reproducer:
