@@ -127,7 +127,7 @@ def build_training_args(out_dir: Path, args):
         "learning_rate": args.lr,
         "warmup_ratio": 0.05,
         "fp16": use_fp16,
-        "save_strategy": "epoch",
+        "save_strategy": ("steps" if getattr(args, "save_steps", None) else "epoch"),
         "save_total_limit": 2,
         "logging_steps": 25,
         "seed": 42,
@@ -147,6 +147,8 @@ def build_training_args(out_dir: Path, args):
         kwargs["eval_strategy"] = "epoch"
     elif "evaluation_strategy" in params:
         kwargs["evaluation_strategy"] = "epoch"
+    if getattr(args, "save_steps", None) and "save_steps" in params:
+        kwargs["save_steps"] = args.save_steps
     if "generation_max_length" in params:
         kwargs["generation_max_length"] = MAX_OUT_TOKENS
     if "generation_num_beams" in params:
@@ -174,6 +176,10 @@ def main() -> None:
     ap.add_argument("--throttle-ms", type=int, default=0,
                     help="sleep ms after each optimizer step; caps GPU util "
                          "so the host stays usable (e.g. 4000 ≈ 80% util)")
+    ap.add_argument("--save-steps", type=int, default=None,
+                    help="save a checkpoint every N optimizer steps (default: "
+                         "once per epoch). Recommended for long runs so a crash "
+                         "does not lose all progress.")
     ap.add_argument("--resume", default=None,
                     help="'auto' = continue from newest checkpoint under --out")
     args = ap.parse_args()
