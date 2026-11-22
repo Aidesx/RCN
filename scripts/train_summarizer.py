@@ -18,6 +18,15 @@ Version-tolerant: works on transformers 4.x and 5.x by probing signatures.
 import argparse
 import inspect
 import json
+import os
+
+# Set before importing torch/numpy: caps CPU thread contention on the 1660 Ti
+# host and avoids tokenizer process storms.
+os.environ.setdefault("OMP_NUM_THREADS", "8")
+os.environ.setdefault("MKL_NUM_THREADS", "8")
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+os.environ.setdefault("TORCH_CUDNN_V8_API_ENABLED", "1")
+
 from pathlib import Path
 
 import torch
@@ -129,7 +138,9 @@ def build_training_args(out_dir: Path, args):
         "fp16": use_fp16,
         "save_strategy": ("steps" if getattr(args, "save_steps", None) else "epoch"),
         "save_total_limit": 2,
-        "logging_steps": 25,
+        "logging_steps": 100,
+        "disable_tqdm": True,
+        "dataloader_drop_last": True,
         "seed": 42,
         "dataloader_num_workers": workers,
         "dataloader_pin_memory": bool(cuda_ok and workers > 0),
@@ -153,6 +164,9 @@ def build_training_args(out_dir: Path, args):
         kwargs["generation_max_length"] = MAX_OUT_TOKENS
     if "generation_num_beams" in params:
         kwargs["generation_num_beams"] = 2
+    # Prefetch only helps when workers run in separate processes.
+    if workers > 0 and "dataloader_prefetch_factor" in params:
+        kwargs["dataloader_prefetch_factor"] = 4
     # drop any arg this version no longer accepts (e.g. warmup_ratio in 5.x)
     kwargs = {k: v for k, v in kwargs.items() if k in params}
     return Seq2SeqTrainingArguments(**kwargs)
@@ -196,6 +210,14 @@ def main() -> None:
     if torch.cuda.is_available():
         torch.backends.cudnn.benchmark = True
         torch.set_float32_matmul_precision("high")
+        torch.backends.cuda.allow_fp16_reduced_precision_reduction = True
+        torch.backends.cuda.enable_mem_efficient_sdp(True)
+        torch.backends.cuda.enable_math_sdp(True)
+        torch.set_num_threads(8)
+        try:
+            torch.cuda.set_per_process_memory_fraction(0.95)
+        except Exception:  # noqa: S110
+            pass
 
     tokenizer = load_tokenizer(args.base_model)
     model = AutoModelForSeq2SeqLM.from_pretrained(args.base_model)
