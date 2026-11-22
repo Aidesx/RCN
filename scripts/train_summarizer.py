@@ -223,6 +223,13 @@ def main() -> None:
 
     tokenizer = load_tokenizer(args.base_model)
     model = AutoModelForSeq2SeqLM.from_pretrained(args.base_model)
+    # Checkpoints saved with tied weights may drop encoder/decoder/lm_head
+    # embedding matrices; re-tie them to shared.weight to avoid (a) random
+    # embeddings and (b) the extra VRAM of three untied 36k x 768 matrices.
+    try:
+        model.tie_weights()
+    except Exception:  # noqa: S110
+        pass
 
     train_ds = PairDataset(Path(args.train), tokenizer)
     val_ds = PairDataset(Path(args.val), tokenizer)
