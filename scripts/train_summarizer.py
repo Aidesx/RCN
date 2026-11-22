@@ -142,6 +142,7 @@ def build_training_args(out_dir: Path, args):
         "logging_steps": 100,
         "disable_tqdm": True,
         "dataloader_drop_last": True,
+        "gradient_checkpointing": getattr(args, "gradient_checkpointing", False),
         "seed": 42,
         "dataloader_num_workers": workers,
         "dataloader_pin_memory": bool(cuda_ok and workers > 0),
@@ -188,6 +189,9 @@ def main() -> None:
                     help="force mixed precision (fp16). On GTX 16xx this is ~2.4x "
                          "faster than the auto (fp32) choice and halves VRAM; "
                          "model capability is unchanged.")
+    ap.add_argument("--gradient-checkpointing", action="store_true",
+                    help="enable gradient checkpointing (trades ~20-30%% speed for "
+                         "much lower VRAM, allowing larger batches on small GPUs).")
     ap.add_argument("--throttle-ms", type=int, default=0,
                     help="sleep ms after each optimizer step; caps GPU util "
                          "so the host stays usable (e.g. 4000 ≈ 80% util)")
