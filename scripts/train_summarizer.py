@@ -26,6 +26,7 @@ os.environ.setdefault("OMP_NUM_THREADS", "8")
 os.environ.setdefault("MKL_NUM_THREADS", "8")
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 os.environ.setdefault("TORCH_CUDNN_V8_API_ENABLED", "1")
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
 from pathlib import Path
 
@@ -208,6 +209,7 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if torch.cuda.is_available():
+        torch.cuda.empty_cache()
         torch.backends.cudnn.benchmark = True
         torch.set_float32_matmul_precision("high")
         torch.backends.cuda.allow_fp16_reduced_precision_reduction = True
