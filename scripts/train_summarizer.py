@@ -150,9 +150,8 @@ def build_training_args(out_dir: Path, args):
         "optim": "adamw_torch",
     }
     # Reduce CPU/GPU sync stalls on WDDM (GeForce display + compute)
-    if cuda_ok:
-        kwargs["dataloader_prefetch_factor"] = 2
-        kwargs["dataloader_persistent_workers"] = workers > 0
+    if cuda_ok and workers > 0:
+        kwargs["dataloader_persistent_workers"] = True
     params = inspect.signature(Seq2SeqTrainingArguments.__init__).parameters
     # transformers >=4.46 renamed evaluation_strategy -> eval_strategy; some
     # versions expose generation_max_length / generation_num_beams.
